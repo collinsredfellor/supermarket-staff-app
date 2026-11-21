@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, ChangeEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,10 +20,13 @@ interface DepartmentWorkspaceProps {
   slug: string;
 }
 
+type DeptTab = "home" | "messages" | "profile";
+
 export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) {
   const router = useRouter();
   const department = DEPARTMENTS.find((d) => d.slug === slug.toLowerCase());
 
+  const [activeTab, setActiveTab] = useState<DeptTab>("home");
   const [staffList, setStaffList] = useState<StaffMember[]>(INITIAL_STAFF);
   const [selectedStaffId, setSelectedStaffId] = useState<string>("");
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
@@ -42,6 +45,15 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const [encryptedMessages, setEncryptedMessages] = useState<EncryptedChatMessage[]>([]);
   const [decryptedMap, setDecryptedMap] = useState<Record<string, string>>({});
   const [showCipherRaw, setShowCipherRaw] = useState(false);
+
+  // Editable Profile State
+  const [editName, setEditName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [profileSavedMsg, setProfileSavedMsg] = useState("");
 
   useEffect(() => {
     const hasAuth = document.cookie
@@ -147,6 +159,22 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const activeWorker =
     selectableWorkers.find((w) => w.id === selectedStaffId) || selectableWorkers[0];
 
+  function syncProfileForm(worker: StaffMember) {
+    setEditName(worker.name);
+    setEditUsername(worker.username);
+    setEditPhone(worker.phone);
+    setEditPassword(worker.password);
+    setEditAvatarUrl(worker.avatarUrl || "");
+    setEditBio(worker.bio || "");
+    setProfileSavedMsg("");
+  }
+
+  function handleSelectWorker(newId: string) {
+    setSelectedStaffId(newId);
+    const chosen = selectableWorkers.find((w) => w.id === newId);
+    if (chosen) syncProfileForm(chosen);
+  }
+
   const canManageStrategy =
     sessionRole === "SENIOR_EXEC_ADMIN" ||
     Boolean(activeWorker?.isStrategyCoAdmin) ||
@@ -168,16 +196,22 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     e.preventDefault();
     if (!coAdminName.trim() || !coAdminRole.trim() || !department || !canManageStrategy) return;
 
+    const slugUser = coAdminName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".");
     const appointed: StaffMember = {
       id: `EMP-${Math.floor(2000 + Math.random() * 7900)}`,
       name: coAdminName.trim(),
+      username: slugUser,
+      phone: "+254 700 000 000",
+      password: "staff123",
+      avatarUrl: "",
+      bio: `${coAdminRole.trim()} assisting ${department.name} strategy.`,
       title: `${coAdminRole.trim()} (Strategy Co-Admin)`,
       level: "Level 3: Management",
       rankScore: (deptExecutiveAdmin?.rankScore || 80) - 5,
       departmentCode: department.code,
       clearance: "L3-STRATEGY-CO-ADMIN",
       shift: "08:00 - 17:00 EAT",
-      email: `${coAdminName.trim().toLowerCase().replace(/\s+/g, ".")}@supermarket-erp.local`,
+      email: `${slugUser}@supermarket-erp.local`,
       badgeCode: `SM-${department.code}-${Math.floor(100 + Math.random() * 899)}`,
       isStrategyCoAdmin: true,
       trackedApps: [
@@ -194,6 +228,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     const updated = [appointed, ...staffList];
     persistStaff(updated);
     setSelectedStaffId(appointed.id);
+    syncProfileForm(appointed);
     setCoAdminNotice(`Appointed ${appointed.name} as Strategy Co-Admin for ${department.code}.`);
     setCoAdminName("");
     setCoAdminRole("");
@@ -265,434 +300,422 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     setChatInput("");
   }
 
+  function handleAvatarFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setEditAvatarUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleSaveProfile(e: FormEvent) {
+    e.preventDefault();
+    if (!activeWorker) return;
+
+    const updated = staffList.map((member) =>
+      member.id === activeWorker.id
+        ? {
+            ...member,
+            name: editName.trim() || member.name,
+            username: editUsername.trim() || member.username,
+            phone: editPhone.trim() || member.phone,
+            password: editPassword || member.password,
+            avatarUrl: editAvatarUrl,
+            bio: editBio.trim(),
+          }
+        : member
+    );
+    persistStaff(updated);
+    setProfileSavedMsg("Profile details updated.");
+  }
+
   const deptChatMessages = encryptedMessages.filter(
     (m) => m.departmentCode === department.code || m.departmentCode === "EXEC-01"
   );
 
   return (
-    <main style={{ minHeight: "100vh", maxWidth: "1320px", margin: "0 auto", padding: "24px 20px 64px" }}>
-      {/* Top Department Navigation & Executive Admin Banner */}
-      <header
-        className="pro-card"
-        style={{
-          padding: "22px 26px",
-          marginBottom: "22px",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "16px",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-            {sessionRole === "SENIOR_EXEC_ADMIN" && (
-              <Link
-                href="/dashboard"
-                className="btn-secondary"
-                style={{ textDecoration: "none", padding: "6px 12px", fontSize: "12.5px" }}
-              >
-                ← Senior Executive Portal
-              </Link>
-            )}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="btn-secondary"
-              style={{ padding: "6px 12px", fontSize: "12.5px" }}
-            >
-              Sign Out
-            </button>
-            <span
-              style={{
-                fontSize: "11.5px",
-                fontWeight: 700,
-                padding: "4px 10px",
-                borderRadius: "6px",
-                backgroundColor: "#f1f5f9",
-                color: department.accent,
-              }}
-            >
-              {department.code} • {department.badge}
-            </span>
-            {deptExecutiveAdmin && (
-              <span
-                style={{
-                  fontSize: "11.5px",
-                  fontWeight: 700,
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  backgroundColor: "#0f172a",
-                  color: "#ffffff",
-                }}
-              >
-                Dept Executive Admin: {deptExecutiveAdmin.name} (Rank {deptExecutiveAdmin.rankScore})
-              </span>
-            )}
-          </div>
-          <h1 style={{ fontSize: "25px", fontWeight: 700, color: "#0f172a" }}>{department.name}</h1>
-          <p style={{ color: "#475569", fontSize: "13.5px", marginTop: "4px", maxWidth: "820px" }}>
-            {department.purpose}
-          </p>
-        </div>
+    <>
+      {/* Instagram-Style Navigation Dock: Bottom on mobile, slanting downwards on left on desktop */}
+      <nav className="insta-dock" aria-label="Department Navigation">
+        <button
+          type="button"
+          className={`insta-dock-btn ${activeTab === "home" ? "active" : ""}`}
+          onClick={() => setActiveTab("home")}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" />
+          </svg>
+          <span>Home</span>
+        </button>
 
-        <div style={{ minWidth: "250px" }}>
-          <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "6px" }}>
-            Select Department Member (Highest Rank = Exec Admin):
-          </label>
-          <select
-            className="pro-select"
-            style={{ width: "100%", fontWeight: 600 }}
-            value={activeWorker.id}
-            onChange={(e) => setSelectedStaffId(e.target.value)}
-          >
-            {selectableWorkers.map((w, idx) => (
-              <option key={w.id} value={w.id}>
-                {idx === 0 ? "★ [Exec Admin] " : w.isStrategyCoAdmin ? "[Co-Admin] " : ""}
-                {w.name} — {w.title}
-              </option>
-            ))}
-          </select>
-        </div>
-      </header>
+        <button
+          type="button"
+          className={`insta-dock-btn ${activeTab === "messages" ? "active" : ""}`}
+          onClick={() => setActiveTab("messages")}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>Messages</span>
+        </button>
 
-      {/* PORT 1 & PORT 2: Credentials Profile + Live Software Tracker */}
-      <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
-        {/* PORT 1: Credentials & Department Strategy Co-Admins */}
-        <div className="pro-card" style={{ flex: "1 1 390px", padding: "22px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
-              Port 01 • Member Credentials & Strategy Authority
-            </span>
-            <span
-              style={{
-                padding: "3px 9px",
-                borderRadius: "6px",
-                fontSize: "11px",
-                fontWeight: 700,
-                backgroundColor: "#f1f5f9",
-                color: "#0f172a",
-              }}
-            >
-              {activeWorker.clearance}
-            </span>
-          </div>
+        <button
+          type="button"
+          className={`insta-dock-btn ${activeTab === "profile" ? "active" : ""}`}
+          onClick={() => {
+            syncProfileForm(activeWorker);
+            setActiveTab("profile");
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          <span>Profile</span>
+        </button>
+      </nav>
 
-          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#0f172a" }}>{activeWorker.name}</h2>
-          <p style={{ fontSize: "13.5px", color: department.accent, fontWeight: 600, marginBottom: "14px" }}>
-            {activeWorker.title} • Rank Score: {activeWorker.rankScore}
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "9px",
-              padding: "14px",
-              borderRadius: "10px",
-              backgroundColor: "#f8fafc",
-              border: "1px solid #e2e8f0",
-              fontSize: "13px",
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#64748b" }}>Employee ID:</span>
-              <strong>{activeWorker.id}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#64748b" }}>Badge Code:</span>
-              <strong>{activeWorker.badgeCode}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#64748b" }}>Hierarchy Tier:</span>
-              <strong>{activeWorker.level}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#64748b" }}>Duty Shift:</span>
-              <strong>{activeWorker.shift}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#64748b" }}>Email:</span>
-              <strong>{activeWorker.email}</strong>
-            </div>
-          </div>
-
-          {/* Appoint Strategy Co-Admin Form */}
-          <div style={{ marginTop: "18px", paddingTop: "14px", borderTop: "1px solid #e2e8f0" }}>
-            <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
-              Appoint Department Strategy Co-Admin
-            </div>
-            {canManageStrategy ? (
-              <form onSubmit={handleAppointStrategyCoAdmin} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <input
-                  type="text"
-                  className="pro-input"
-                  placeholder="Co-Admin Name"
-                  value={coAdminName}
-                  onChange={(e) => setCoAdminName(e.target.value)}
-                  required
-                />
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <input
-                    type="text"
-                    className="pro-input"
-                    style={{ flex: 1 }}
-                    placeholder="Strategy Focus (e.g., Cost & Shift Strategy)"
-                    value={coAdminRole}
-                    onChange={(e) => setCoAdminRole(e.target.value)}
-                    required
-                  />
-                  <button type="submit" className="btn-primary" style={{ padding: "9px 12px", fontSize: "12.5px" }}>
-                    Appoint
-                  </button>
-                </div>
-                {coAdminNotice && (
-                  <p style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>✓ {coAdminNotice}</p>
-                )}
-              </form>
-            ) : (
-              <p style={{ fontSize: "12px", color: "#64748b" }}>
-                Select the Department Executive Admin or a Strategy Co-Admin above to appoint strategy assistants.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* PORT 2: Real-Time Trackable Software Applications */}
-        <div className="pro-card" style={{ flex: "1.4 1 480px", padding: "22px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
-            <div>
-              <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
-                Port 02 • Real-Time Trackable Software Applications
-              </span>
-              <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", marginTop: "2px" }}>
-                Active Work Telemetry ({activeWorker.name})
-              </h2>
-            </div>
-            <span style={{ fontSize: "12px", fontWeight: 700, color: "#047857" }}>● LIVE</span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
-            {activeWorker.trackedApps.map((app, index) => (
-              <div
-                key={app.appName}
-                style={{
-                  padding: "14px 16px",
-                  borderRadius: "10px",
-                  backgroundColor: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                  <strong style={{ fontSize: "14px", color: "#0f172a" }}>{app.appName}</strong>
-                  <span style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>
-                    {app.status} • {app.lastPing}
-                  </span>
-                </div>
-                <p style={{ fontSize: "13px", color: "#475569", marginBottom: "10px" }}>
-                  {app.activeTask}
-                </p>
-
-                <div style={{ width: "100%", height: "8px", borderRadius: "999px", backgroundColor: "#e2e8f0", overflow: "hidden", marginBottom: "10px" }}>
-                  <div
-                    style={{
-                      width: `${app.progress}%`,
-                      height: "100%",
-                      backgroundColor: department.accent,
-                      transition: "width 0.25s ease",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>
-                    Progress: {app.progress}%
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleBumpAppProgress(index)}
-                    className="btn-secondary"
-                    style={{ padding: "5px 11px", fontSize: "12px" }}
-                  >
-                    + Log Work Pulse
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#64748b", marginBottom: "8px" }}>
-              DEPARTMENTAL KPIs & DOCUMENTS ({department.code}):
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              {department.kpis.map((kpi) => (
-                <span
-                  key={kpi}
-                  style={{
-                    fontSize: "11.5px",
-                    padding: "4px 9px",
-                    borderRadius: "6px",
-                    backgroundColor: "#f1f5f9",
-                    color: "#0f172a",
-                    fontWeight: 600,
-                  }}
-                >
-                  {kpi}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Bottom Row: Interdepartmental Timeline + AES-GCM Encrypted Chat */}
-      <section style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
-        <div className="pro-card" style={{ flex: "1.2 1 460px", padding: "22px" }}>
-          <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
-            Interdepartmental Coordination Timeline
-          </h2>
-          <p style={{ fontSize: "12.5px", color: "#64748b", marginBottom: "12px" }}>
-            Log cross-departmental handoffs (e.g., GRN verified, budget approved, roster updated)
-          </p>
-
-          <form onSubmit={handleLogWorkflowHandoff} style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px" }}>
-            <input
-              type="text"
-              className="pro-input"
-              placeholder="Action update (e.g., Verified incoming stock batch & issued GRN)"
-              value={handoffNote}
-              onChange={(e) => setHandoffNote(e.target.value)}
-              required
-            />
-            <div style={{ display: "flex", gap: "8px" }}>
-              <input
-                type="text"
-                className="pro-input"
-                style={{ flex: 1 }}
-                placeholder="Doc Ref (e.g., GRN-2026-445)"
-                value={handoffDoc}
-                onChange={(e) => setHandoffDoc(e.target.value)}
+      <main className="dock-main-content" style={{ minHeight: "100vh", maxWidth: "1280px", marginRight: "auto", paddingLeft: "20px", paddingRight: "20px", paddingTop: "24px" }}>
+        {/* Top Department Header Showing User Name & Current Doings */}
+        <header
+          className="pro-card"
+          style={{
+            padding: "22px 26px",
+            marginBottom: "22px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "16px",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+            {activeWorker.avatarUrl ? (
+              <img
+                src={activeWorker.avatarUrl}
+                alt={activeWorker.name}
+                style={{ width: "52px", height: "52px", borderRadius: "999px", objectFit: "cover", border: "2px solid #0f172a" }}
               />
-              <button type="submit" className="btn-primary">
-                Broadcast Handoff
-              </button>
-            </div>
-          </form>
+            ) : (
+              <div style={{ width: "52px", height: "52px", borderRadius: "999px", backgroundColor: "#0f172a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "18px", flexShrink: 0 }}>
+                {activeWorker.name.charAt(0)}
+              </div>
+            )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "230px", overflowY: "auto" }}>
-            {timeline.map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: "8px",
-                  backgroundColor: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  fontSize: "12.5px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                  <strong style={{ color: "#0f172a" }}>
-                    [{t.departmentCode}] {t.actorRole}
-                  </strong>
-                  <span style={{ color: "#64748b", fontSize: "11.5px" }}>
-                    {t.documentRef} • {t.timestamp}
+            <div>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                {sessionRole === "SENIOR_EXEC_ADMIN" && (
+                  <Link href="/dashboard" className="btn-secondary" style={{ textDecoration: "none", padding: "5px 11px", fontSize: "12px" }}>
+                    ← Senior Executive Portal
+                  </Link>
+                )}
+                <button type="button" onClick={handleSignOut} className="btn-secondary" style={{ padding: "5px 11px", fontSize: "12px" }}>
+                  Sign Out
+                </button>
+                <span style={{ fontSize: "11.5px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#f1f5f9", color: department.accent }}>
+                  {department.code} • {department.badge}
+                </span>
+                {deptExecutiveAdmin && (
+                  <span style={{ fontSize: "11.5px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#0f172a", color: "#ffffff" }}>
+                    Dept Executive Admin: {deptExecutiveAdmin.name}
+                  </span>
+                )}
+              </div>
+
+              <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a" }}>
+                {activeWorker.name} — {department.name}
+              </h1>
+              <p style={{ color: "#475569", fontSize: "13px", marginTop: "3px" }}>
+                <strong>His/Her Doings:</strong> {activeWorker.trackedApps[0]?.activeTask || department.purpose}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ minWidth: "240px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+              Active Member in {department.code}:
+            </label>
+            <select className="pro-select" style={{ width: "100%", fontWeight: 600 }} value={activeWorker.id} onChange={(e) => handleSelectWorker(e.target.value)}>
+              {selectableWorkers.map((w, idx) => (
+                <option key={w.id} value={w.id}>
+                  {idx === 0 ? "★ [Exec Admin] " : w.isStrategyCoAdmin ? "[Co-Admin] " : ""}
+                  {w.name} — {w.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        </header>
+
+        {/* TAB 1: HOME (Working Part Dashboard, Doings, Co-Admin Appointment & Timeline) */}
+        {activeTab === "home" && (
+          <>
+            <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
+              {/* Credentials & Strategy Co-Admin */}
+              <div className="pro-card" style={{ flex: "1 1 380px", padding: "22px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
+                    Member Summary & Authority
+                  </span>
+                  <span style={{ padding: "3px 9px", borderRadius: "6px", fontSize: "11px", fontWeight: 700, backgroundColor: "#f1f5f9", color: "#0f172a" }}>
+                    {activeWorker.clearance}
                   </span>
                 </div>
-                <p style={{ color: "#334155" }}>{t.action}</p>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="pro-card" style={{ flex: "1 1 420px", padding: "22px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
-                AES-256 Encrypted Staff Channel
+                <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>{activeWorker.name}</h2>
+                <p style={{ fontSize: "13px", color: department.accent, fontWeight: 600, marginBottom: "8px" }}>
+                  {activeWorker.title} • Rank {activeWorker.rankScore}
+                </p>
+                {activeWorker.bio && (
+                  <p style={{ fontSize: "12.5px", color: "#475569", marginBottom: "12px" }}>{activeWorker.bio}</p>
+                )}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 14px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", fontSize: "12.5px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Username:</span>
+                    <strong>@{activeWorker.username}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Phone:</span>
+                    <strong>{activeWorker.phone}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Badge Code:</span>
+                    <strong>{activeWorker.badgeCode}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Duty Shift:</span>
+                    <strong>{activeWorker.shift}</strong>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
+                    Appoint Department Strategy Co-Admin
+                  </div>
+                  {canManageStrategy ? (
+                    <form onSubmit={handleAppointStrategyCoAdmin} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <input type="text" className="pro-input" placeholder="Co-Admin Name" value={coAdminName} onChange={(e) => setCoAdminName(e.target.value)} required />
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <input type="text" className="pro-input" style={{ flex: 1 }} placeholder="Strategy Focus" value={coAdminRole} onChange={(e) => setCoAdminRole(e.target.value)} required />
+                        <button type="submit" className="btn-primary" style={{ padding: "9px 12px", fontSize: "12.5px" }}>Appoint</button>
+                      </div>
+                      {coAdminNotice && <p style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>✓ {coAdminNotice}</p>}
+                    </form>
+                  ) : (
+                    <p style={{ fontSize: "12px", color: "#64748b" }}>
+                      Select the Department Executive Admin or a Strategy Co-Admin above to appoint strategy assistants.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Working Part: Active Doings & Trackable Software Applications */}
+              <div className="pro-card" style={{ flex: "1.4 1 460px", padding: "22px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                  <div>
+                    <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
+                      Working Part • Active Doings & Software Telemetry
+                    </span>
+                    <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", marginTop: "2px" }}>
+                      {activeWorker.name}'s Current Doings
+                    </h2>
+                  </div>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#047857" }}>● LIVE</span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+                  {activeWorker.trackedApps.map((app, index) => (
+                    <div key={app.appName} style={{ padding: "14px 16px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                        <strong style={{ fontSize: "14px", color: "#0f172a" }}>{app.appName}</strong>
+                        <span style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>{app.status} • {app.lastPing}</span>
+                      </div>
+                      <p style={{ fontSize: "13px", color: "#475569", marginBottom: "10px" }}>{app.activeTask}</p>
+                      <div style={{ width: "100%", height: "8px", borderRadius: "999px", backgroundColor: "#e2e8f0", overflow: "hidden", marginBottom: "10px" }}>
+                        <div style={{ width: `${app.progress}%`, height: "100%", backgroundColor: department.accent, transition: "width 0.25s ease" }} />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>Progress: {app.progress}%</span>
+                        <button type="button" onClick={() => handleBumpAppProgress(index)} className="btn-secondary" style={{ padding: "5px 11px", fontSize: "12px" }}>
+                          + Log Work Pulse
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#64748b", marginBottom: "8px" }}>
+                    DEPARTMENTAL KPIs ({department.code}):
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    {department.kpis.map((kpi) => (
+                      <span key={kpi} style={{ fontSize: "11.5px", padding: "4px 9px", borderRadius: "6px", backgroundColor: "#f1f5f9", color: "#0f172a", fontWeight: 600 }}>
+                        {kpi}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Interdepartmental Timeline Handoffs */}
+            <section className="pro-card" style={{ padding: "22px" }}>
+              <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
+                Interdepartmental Coordination Timeline
               </h2>
-              <button
-                type="button"
-                onClick={() => setShowCipherRaw(!showCipherRaw)}
-                className="btn-secondary"
-                style={{ padding: "5px 10px", fontSize: "11.5px" }}
-              >
+              <p style={{ fontSize: "12.5px", color: "#64748b", marginBottom: "12px" }}>
+                Log cross-departmental handoffs as work moves across supermarket teams
+              </p>
+
+              <form onSubmit={handleLogWorkflowHandoff} style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "14px" }}>
+                <input type="text" className="pro-input" placeholder="Action update (e.g., Verified incoming stock batch & issued GRN)" value={handoffNote} onChange={(e) => setHandoffNote(e.target.value)} required />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input type="text" className="pro-input" style={{ flex: 1 }} placeholder="Doc Ref (e.g., GRN-2026-445)" value={handoffDoc} onChange={(e) => setHandoffDoc(e.target.value)} />
+                  <button type="submit" className="btn-primary">Broadcast Handoff</button>
+                </div>
+              </form>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "220px", overflowY: "auto" }}>
+                {timeline.map((t) => (
+                  <div key={t.id} style={{ padding: "10px 12px", borderRadius: "8px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", fontSize: "12.5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                      <strong style={{ color: "#0f172a" }}>[{t.departmentCode}] {t.actorRole}</strong>
+                      <span style={{ color: "#64748b", fontSize: "11.5px" }}>{t.documentRef} • {t.timestamp}</span>
+                    </div>
+                    <p style={{ color: "#334155" }}>{t.action}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        {/* TAB 2: MESSAGES (Staff Encrypted Communication) */}
+        {activeTab === "messages" && (
+          <section className="pro-card" style={{ padding: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <div>
+                <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>
+                  Staff Encrypted Channel ({department.code})
+                </h2>
+                <p style={{ fontSize: "13px", color: "#64748b" }}>Communicate securely with staff across departments</p>
+              </div>
+              <button type="button" onClick={() => setShowCipherRaw(!showCipherRaw)} className="btn-secondary">
                 {showCipherRaw ? "Show Decrypted" : "Inspect Ciphertext"}
               </button>
             </div>
 
-            <div style={{ marginBottom: "10px" }}>
-              <label style={{ fontSize: "11.5px", color: "#64748b", fontWeight: 600, display: "block", marginBottom: "4px" }}>
+            <div style={{ marginBottom: "12px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>
                 Shared Encryption Key:
               </label>
-              <input
-                type="password"
-                className="pro-input"
-                style={{ width: "100%", fontSize: "12.5px" }}
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-              />
+              <input type="password" className="pro-input" style={{ width: "100%", maxWidth: "360px" }} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-                height: "195px",
-                overflowY: "auto",
-                padding: "10px",
-                borderRadius: "8px",
-                backgroundColor: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                marginBottom: "10px",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", minHeight: "260px", maxHeight: "360px", overflowY: "auto", padding: "12px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: "12px" }}>
               {deptChatMessages.length === 0 ? (
-                <p style={{ fontSize: "12.5px", color: "#64748b", textAlign: "center", marginTop: "65px" }}>
+                <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "90px" }}>
                   No encrypted messages in {department.code} yet.
                 </p>
               ) : (
                 deptChatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: "8px",
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #e2e8f0",
-                      fontSize: "12.5px",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", color: "#64748b", fontSize: "11px", marginBottom: "2px" }}>
+                  <div key={msg.id} style={{ padding: "10px 12px", borderRadius: "8px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", color: "#64748b", marginBottom: "3px" }}>
                       <strong style={{ color: "#0f172a" }}>{msg.senderName}</strong>
                       <span>{msg.timestamp}</span>
                     </div>
-                    <p style={{ color: showCipherRaw ? "#b45309" : "#0f172a", wordBreak: "break-word", fontFamily: showCipherRaw ? "monospace" : "inherit" }}>
+                    <p style={{ fontSize: "13px", color: showCipherRaw ? "#b45309" : "#0f172a", wordBreak: "break-word", fontFamily: showCipherRaw ? "monospace" : "inherit" }}>
                       {showCipherRaw ? `AES-GCM::${msg.cipherBase64}` : decryptedMap[msg.id] || "Decrypting..."}
                     </p>
                   </div>
                 ))
               )}
             </div>
-          </div>
 
-          <form onSubmit={handleSendEncryptedChat} style={{ display: "flex", gap: "8px" }}>
-            <input
-              type="text"
-              className="pro-input"
-              style={{ flex: 1 }}
-              placeholder={`Encrypted message as ${activeWorker.name}...`}
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-            />
-            <button type="submit" className="btn-primary">
-              Send
-            </button>
-          </form>
-        </div>
-      </section>
-    </main>
+            <form onSubmit={handleSendEncryptedChat} style={{ display: "flex", gap: "10px" }}>
+              <input
+                type="text"
+                className="pro-input"
+                style={{ flex: 1 }}
+                placeholder={`Encrypted message as ${activeWorker.name}...`}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+              />
+              <button type="submit" className="btn-primary">Send Message</button>
+            </form>
+          </section>
+        )}
+
+        {/* TAB 3: PROFILE (Edit Name, Username, Phone, Password, Profile Picture, Bio) */}
+        {activeTab === "profile" && (
+          <section className="pro-card" style={{ padding: "24px", maxWidth: "680px" }}>
+            <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
+              Edit Profile — {activeWorker.name}
+            </h2>
+            <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "18px" }}>
+              Change your name, username, phone number, password, profile picture, and bio.
+            </p>
+
+            <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                {editAvatarUrl ? (
+                  <img src={editAvatarUrl} alt="Avatar preview" style={{ width: "64px", height: "64px", borderRadius: "999px", objectFit: "cover", border: "2px solid #0f172a" }} />
+                ) : (
+                  <div style={{ width: "64px", height: "64px", borderRadius: "999px", backgroundColor: "#0f172a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "20px" }}>
+                    {(editName || activeWorker.name).charAt(0)}
+                  </div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#334155", marginBottom: "4px" }}>
+                    Profile Picture (Upload Image or Paste URL)
+                  </label>
+                  <input type="file" accept="image/*" onChange={handleAvatarFileChange} style={{ fontSize: "12.5px", marginBottom: "6px" }} />
+                  <input type="text" className="pro-input" style={{ width: "100%" }} placeholder="https://example.com/photo.jpg" value={editAvatarUrl} onChange={(e) => setEditAvatarUrl(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                  <span>Name</span>
+                  <input type="text" className="pro-input" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+                </label>
+
+                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                  <span>Username</span>
+                  <input type="text" className="pro-input" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} required />
+                </label>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                  <span>Phone Number</span>
+                  <input type="text" className="pro-input" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} required />
+                </label>
+
+                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                  <span>Password</span>
+                  <input type="text" className="pro-input" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} required />
+                </label>
+              </div>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                <span>Bio</span>
+                <textarea className="pro-textarea" rows={3} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Write your bio..." />
+              </label>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <button type="submit" className="btn-primary">Save Profile</button>
+                {profileSavedMsg && <span style={{ fontSize: "13px", color: "#047857", fontWeight: 600 }}>✓ {profileSavedMsg}</span>}
+              </div>
+            </form>
+          </section>
+        )}
+      </main>
+    </>
   );
 }
