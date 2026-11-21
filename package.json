@@ -1,6 +1,6 @@
 
 {
-  "name": "nodejs-hello-world",
+  "name": "supermarket-staff-app",
   "version": "1.0.0",
   "private": true,
   "type": "module"
