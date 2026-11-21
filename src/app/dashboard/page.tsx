@@ -31,8 +31,12 @@ export default function SeniorExecutiveDashboardPage() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
   const [transactions] = useState<SupermarketTransaction[]>(INITIAL_TRANSACTIONS);
 
-  // Appoint Staff / Strategy Co-Admin Form
+  // Appoint New Employee & Provision Department Port Form
   const [newName, setNewName] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [usernameTouched, setUsernameTouched] = useState(false);
+  const [newPassword, setNewPassword] = useState("staff123");
+  const [newPhone, setNewPhone] = useState("+254 700 000 000");
   const [newTitle, setNewTitle] = useState("");
   const [newDept, setNewDept] = useState("EXEC-01");
   const [newLevel, setNewLevel] = useState<StaffMember["level"]>("Level 3: Management");
@@ -172,20 +176,31 @@ export default function SeniorExecutiveDashboardPage() {
     router.push("/");
   }
 
+  function handleNewNameChange(val: string) {
+    setNewName(val);
+    if (!usernameTouched) {
+      const autoSlug = val.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".");
+      setNewUsername(autoSlug);
+    }
+  }
+
   function handleAppointOrAssign(e: FormEvent) {
     e.preventDefault();
     if (!newName.trim() || !newTitle.trim()) return;
 
     const deptObj = DEPARTMENTS.find((d) => d.code === newDept);
-    const slugName = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".");
+    const fallbackSlug = newName.trim().toLowerCase().replace(/[^a-z0-9]+/g, ".");
+    const finalUsername = (newUsername.trim() || fallbackSlug).replace(/\s+/g, "").toLowerCase();
+    const finalPassword = newPassword.trim() || "staff123";
+
     const created: StaffMember = {
       id: `EMP-${Math.floor(1010 + Math.random() * 8900)}`,
       name: newName.trim(),
-      username: slugName,
-      phone: "+254 700 000 000",
-      password: "staff123",
+      username: finalUsername,
+      phone: newPhone.trim() || "+254 700 000 000",
+      password: finalPassword,
       avatarUrl: "",
-      bio: `${newTitle.trim()} assigned to ${deptObj?.name || newDept}.`,
+      bio: `${newTitle.trim()} designated to ${deptObj?.name || newDept}. Can update username & password in Profile.`,
       title: newTitle.trim(),
       level: newLevel,
       rankScore: Number(newRankScore) || getRankScoreForLevel(newLevel),
@@ -196,13 +211,13 @@ export default function SeniorExecutiveDashboardPage() {
         ? "L4-EXEC"
         : "L2-DEPT-STAFF",
       shift: "08:00 - 17:00 EAT",
-      email: `${slugName}@supermarket-erp.local`,
+      email: `${finalUsername}@supermarket-erp.local`,
       badgeCode: `SM-${newDept}-${Math.floor(100 + Math.random() * 899)}`,
       isStrategyCoAdmin: makeStrategyCoAdmin,
       trackedApps: [
         {
-          appName: `${deptObj?.name || newDept} Strategy & Ops Suite`,
-          activeTask: `Coordinating ${newTitle.trim()} deliverables`,
+          appName: `${deptObj?.name || newDept} Port & Ops Suite`,
+          activeTask: `Designated to ${deptObj?.name || newDept} as ${newTitle.trim()}`,
           progress: 88,
           status: "Running",
           lastPing: "Just now",
@@ -222,12 +237,12 @@ export default function SeniorExecutiveDashboardPage() {
 
     const logEntry: TimelineEvent = {
       id: `TL-${Date.now()}`,
-      workflow: "Executive Governance & Strategy Assignment",
+      workflow: "Employee Port Provisioning & Department Assignment",
       stepNumber: timeline.length + 1,
       departmentCode: newDept,
       actorRole: `${currentUser.name} (Senior Exec Admin)`,
-      action: `${makeStrategyCoAdmin ? "Appointed Strategy Co-Admin " : "Assigned "}${created.name} (${created.title}) in ${deptObj?.name}.`,
-      documentRef: `EXEC-${created.id}`,
+      action: `Created port for ${created.name} (@${created.username}) in ${deptObj?.name} (${deptObj?.code})${makeStrategyCoAdmin ? " as Strategy Co-Admin" : ""}.`,
+      documentRef: `PORT-${created.id}`,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "Completed",
     };
@@ -236,9 +251,12 @@ export default function SeniorExecutiveDashboardPage() {
     localStorage.setItem("sm_erp_timeline", JSON.stringify(updatedTimeline));
 
     setStatusMessage(
-      `${created.name} added to ${deptObj?.code}${makeStrategyCoAdmin ? " as Strategy Co-Admin" : ""}.`
+      `Port created for ${created.name} in ${deptObj?.code} | Username: @${created.username} | Password set (changeable in Profile).`
     );
     setNewName("");
+    setNewUsername("");
+    setUsernameTouched(false);
+    setNewPassword("staff123");
     setNewTitle("");
   }
 
@@ -370,7 +388,6 @@ export default function SeniorExecutiveDashboardPage() {
 
   return (
     <>
-      {/* Instagram Dock: Bottom bar on mobile, slanting downwards on left on desktop */}
       <nav className="insta-dock" aria-label="Workspace Navigation">
         <button
           type="button"
@@ -421,7 +438,6 @@ export default function SeniorExecutiveDashboardPage() {
           paddingTop: "24px",
         }}
       >
-        {/* Top Header Showing User Name & Current Doings */}
         <header
           className="pro-card"
           style={{
@@ -434,38 +450,8 @@ export default function SeniorExecutiveDashboardPage() {
             justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            {currentUser.avatarUrl ? (
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.name}
-                style={{
-                  width: "54px",
-                  height: "54px",
-                  borderRadius: "999px",
-                  objectFit: "cover",
-                  border: "2px solid #0f172a",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "54px",
-                  height: "54px",
-                  borderRadius: "999px",
-                  background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-                  color: "#ffffff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                  fontSize: "19px",
-                }}
-              >
-                {currentUser.name.charAt(0)}
-              </div>
-            )}
-            <div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
               <span
                 style={{
                   display: "inline-block",
@@ -478,14 +464,60 @@ export default function SeniorExecutiveDashboardPage() {
                   color: "#ffffff",
                 }}
               >
+                {currentUser.title}
+              </span>
+              <span
+                style={{
+                  fontSize: "11.5px",
+                  fontWeight: 600,
+                  color: "#475569",
+                }}
+              >
                 EXEC-01 | SENIOR EXECUTIVE ADMIN
               </span>
-              <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a", marginTop: "6px" }}>
-                {currentUser.name} - Executive & Senior Management
-              </h1>
-              <p style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
-                <strong>His Doings:</strong> {currentUser.trackedApps[0]?.activeTask || execDept.purpose}
-              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              {currentUser.avatarUrl ? (
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.name}
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "999px",
+                    objectFit: "cover",
+                    border: "2px solid #0f172a",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "19px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {currentUser.name.charAt(0)}
+                </div>
+              )}
+
+              <div>
+                <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", lineHeight: 1.25 }}>
+                  Encrypted: {currentUser.name}
+                </h1>
+                <p style={{ color: "#475569", fontSize: "13px", marginTop: "3px" }}>
+                  <strong>His Doings:</strong> {currentUser.trackedApps[0]?.activeTask || execDept.purpose}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -503,7 +535,6 @@ export default function SeniorExecutiveDashboardPage() {
           </div>
         </header>
 
-        {/* HOME TAB */}
         {activeTab === "home" && (
           <>
             <section className="pro-card" style={{ padding: "18px 22px", marginBottom: "20px" }}>
@@ -581,17 +612,16 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
 
               <div className="pro-card" style={{ flex: "1 1 210px", padding: "18px 20px" }}>
-                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>STRATEGY CO-ADMINS</div>
+                <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>ACTIVE STAFF PORTS</div>
                 <div style={{ fontSize: "23px", fontWeight: 700, color: "#0f172a", marginTop: "4px" }}>
-                  {staffList.filter((s) => s.isStrategyCoAdmin).length} Appointed
+                  {staffList.length} Staff
                 </div>
                 <div style={{ fontSize: "12px", color: "#0369a1", fontWeight: 600, marginTop: "4px" }}>
-                  Department strategy leads
+                  {staffList.filter((s) => s.isStrategyCoAdmin).length} Strategy Co-Admins
                 </div>
               </div>
             </section>
 
-            {/* Modernized Area/Line Chart & Department Bars */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1.1 1 400px", padding: "22px" }}>
                 <div
@@ -697,7 +727,6 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* Shareholders, Board & Strategy Co-Admin Appointment */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1.2 1 440px", padding: "22px" }}>
                 <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
@@ -751,38 +780,64 @@ export default function SeniorExecutiveDashboardPage() {
                 </div>
               </div>
 
-              <div className="pro-card" style={{ flex: "1 1 390px", padding: "22px" }}>
+              {/* Create Employee Port, Assign Department & Set Initial Username/Password */}
+              <div className="pro-card" style={{ flex: "1 1 410px", padding: "22px" }}>
                 <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
-                  Appoint Strategy Co-Admin / Staff
+                  Add Employee & Create Department Port
                 </h2>
                 <p style={{ fontSize: "12.5px", color: "#64748b", marginBottom: "14px" }}>
-                  Appoint admins to assist with department strategies
+                  Designate department port, set initial username & password (employees can change them in Profile)
                 </p>
 
                 <form
                   onSubmit={handleAppointOrAssign}
-                  style={{ display: "flex", flexDirection: "column", gap: "11px" }}
+                  style={{ display: "flex", flexDirection: "column", gap: "10px" }}
                 >
                   <input
                     type="text"
                     className="pro-input"
-                    placeholder="Full Name"
+                    placeholder="Employee Full Name"
                     value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
+                    onChange={(e) => handleNewNameChange(e.target.value)}
                     required
                   />
                   <input
                     type="text"
                     className="pro-input"
-                    placeholder="Strategy / Role Title"
+                    placeholder="Role / Strategy Title"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     required
                   />
+
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                    <input
+                      type="text"
+                      className="pro-input"
+                      style={{ flex: "1 1 160px" }}
+                      placeholder="Initial Username"
+                      value={newUsername}
+                      onChange={(e) => {
+                        setUsernameTouched(true);
+                        setNewUsername(e.target.value);
+                      }}
+                      required
+                    />
+                    <input
+                      type="text"
+                      className="pro-input"
+                      style={{ flex: "1 1 160px" }}
+                      placeholder="Initial Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
                     <select
                       className="pro-select"
-                      style={{ flex: "1 1 170px" }}
+                      style={{ flex: "1 1 180px" }}
                       value={newDept}
                       onChange={(e) => setNewDept(e.target.value)}
                     >
@@ -808,6 +863,14 @@ export default function SeniorExecutiveDashboardPage() {
                     </select>
                   </div>
 
+                  <input
+                    type="text"
+                    className="pro-input"
+                    placeholder="Phone Number (e.g., +254 712 345 678)"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                  />
+
                   <label
                     style={{
                       display: "flex",
@@ -827,7 +890,7 @@ export default function SeniorExecutiveDashboardPage() {
                   </label>
 
                   <button type="submit" className="btn-primary">
-                    Save Appointment
+                    Create Port & Assign Employee
                   </button>
 
                   {statusMessage && (
@@ -863,7 +926,7 @@ export default function SeniorExecutiveDashboardPage() {
                       overflowY: "auto",
                     }}
                   >
-                    {staffList.slice(0, 6).map((person) => (
+                    {staffList.slice(0, 8).map((person) => (
                       <div
                         key={person.id}
                         style={{
@@ -877,7 +940,7 @@ export default function SeniorExecutiveDashboardPage() {
                         }}
                       >
                         <span>
-                          <strong>{person.name}</strong> ({person.departmentCode})
+                          <strong>{person.name}</strong> (@{person.username} · {person.departmentCode})
                         </span>
                         <button
                           type="button"
@@ -894,7 +957,6 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* Transactions Table */}
             <section className="pro-card" style={{ padding: "22px", marginBottom: "24px" }}>
               <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
                 Supermarket Transaction Details
@@ -963,7 +1025,6 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* All 9 Department Cards */}
             <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", marginBottom: "12px" }}>
               Departmental Workspaces (Highest-Ranked Member = Department Executive Admin)
             </h2>
@@ -1064,7 +1125,6 @@ export default function SeniorExecutiveDashboardPage() {
           </>
         )}
 
-        {/* MESSAGES TAB (Chat Mode) */}
         {activeTab === "messages" && (
           <section className="pro-card" style={{ padding: "24px" }}>
             <div
@@ -1226,7 +1286,6 @@ export default function SeniorExecutiveDashboardPage() {
           </section>
         )}
 
-        {/* PROFILE TAB */}
         {activeTab === "profile" && (
           <section className="pro-card" style={{ padding: "24px", maxWidth: "680px" }}>
             <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
