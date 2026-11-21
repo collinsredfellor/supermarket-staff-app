@@ -27,20 +27,26 @@ export default function UnifiedStaffLoginPage() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const cleanName = name.trim();
+    const cleanInput = name.trim().toLowerCase();
+
+    const execRecord =
+      staffDirectory.find((s) => s.id === "EMP-1001") || INITIAL_STAFF[0];
+    const execNames = [
+      execRecord.name.toLowerCase(),
+      execRecord.username.toLowerCase(),
+      "collins musa",
+    ];
+    const execPass = execRecord.password || "eucabeth1musa";
 
     // 1. Senior Executive Admin (EXEC-01)
-    if (cleanName.toLowerCase() === "collins musa" && password === "eucabeth1musa") {
-      const execUser =
-        staffDirectory.find((s) => s.name.toLowerCase() === "collins musa") || INITIAL_STAFF[0];
-
+    if (execNames.includes(cleanInput) && password === execPass) {
       document.cookie = "staff_admin_auth=1; path=/; max-age=86400";
       localStorage.setItem(
         "sm_erp_session",
         JSON.stringify({
           role: "SENIOR_EXEC_ADMIN",
-          staffId: execUser.id,
-          name: execUser.name,
+          staffId: execRecord.id,
+          name: execRecord.name,
           departmentCode: "EXEC-01",
         })
       );
@@ -50,12 +56,16 @@ export default function UnifiedStaffLoginPage() {
 
     // 2. Department Staff / Dept Executive Admin / Strategy Co-Admin
     const matchedStaff = staffDirectory.find(
-      (member) => member.name.toLowerCase() === cleanName.toLowerCase()
+      (member) =>
+        member.name.toLowerCase() === cleanInput ||
+        member.username.toLowerCase() === cleanInput
     );
 
     if (
       matchedStaff &&
-      (password === matchedStaff.badgeCode || password === STAFF_SHARED_PASSKEY)
+      (password === matchedStaff.password ||
+        password === matchedStaff.badgeCode ||
+        password === STAFF_SHARED_PASSKEY)
     ) {
       const dept =
         DEPARTMENTS.find((d) => d.code === matchedStaff.departmentCode) || DEPARTMENTS[0];
@@ -75,7 +85,7 @@ export default function UnifiedStaffLoginPage() {
     }
 
     setError(
-      "Invalid credentials. Enter your registered Name and Badge Code (or staff passkey)."
+      "Invalid credentials. Enter your registered Name/Username and Password or Badge Code."
     );
   }
 
@@ -178,7 +188,7 @@ export default function UnifiedStaffLoginPage() {
             Staff & Executive Sign In
           </h2>
           <p style={{ color: "#64748b", fontSize: "13.5px", marginBottom: "22px" }}>
-            Sign in with your full name and password or badge code.
+            Sign in with your full name or username and password.
           </p>
 
           <form
@@ -195,13 +205,13 @@ export default function UnifiedStaffLoginPage() {
                 color: "#334155",
               }}
             >
-              <span>Full Name</span>
+              <span>Name or Username</span>
               <input
                 type="text"
                 className="pro-input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
+                placeholder="Enter your name or username"
                 autoComplete="username"
                 required
               />
@@ -217,7 +227,7 @@ export default function UnifiedStaffLoginPage() {
                 color: "#334155",
               }}
             >
-              <span>Password / Badge Code</span>
+              <span>Password</span>
               <input
                 type="password"
                 className="pro-input"
