@@ -31,7 +31,6 @@ export default function SeniorExecutiveDashboardPage() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
   const [transactions] = useState<SupermarketTransaction[]>(INITIAL_TRANSACTIONS);
 
-  // Appoint Staff / Strategy Co-Admin Form
   const [newName, setNewName] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newDept, setNewDept] = useState("EXEC-01");
@@ -40,14 +39,12 @@ export default function SeniorExecutiveDashboardPage() {
   const [makeStrategyCoAdmin, setMakeStrategyCoAdmin] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
 
-  // Encrypted Messages State
   const [passphrase, setPassphrase] = useState("SM-ORG-001-SECURE");
   const [chatInput, setChatInput] = useState("");
   const [encryptedMessages, setEncryptedMessages] = useState<EncryptedChatMessage[]>([]);
   const [decryptedMap, setDecryptedMap] = useState<Record<string, string>>({});
   const [showCipherRaw, setShowCipherRaw] = useState(false);
 
-  // Editable Profile State
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -75,7 +72,9 @@ export default function SeniorExecutiveDashboardPage() {
           loadedStaff = parsed;
           setStaffList(parsed);
         }
-      } catch {}
+      } catch {
+        // ignore invalid storage
+      }
     }
 
     let activeId = "EMP-1001";
@@ -96,7 +95,9 @@ export default function SeniorExecutiveDashboardPage() {
         if (session.staffId) {
           activeId = session.staffId;
         }
-      } catch {}
+      } catch {
+        // ignore invalid session
+      }
     }
 
     setCurrentUserId(activeId);
@@ -116,14 +117,18 @@ export default function SeniorExecutiveDashboardPage() {
     if (savedTimeline) {
       try {
         setTimeline(JSON.parse(savedTimeline));
-      } catch {}
+      } catch {
+        // ignore invalid timeline
+      }
     }
 
     const savedChat = localStorage.getItem("sm_erp_encrypted_chat");
     if (savedChat) {
       try {
         setEncryptedMessages(JSON.parse(savedChat));
-      } catch {}
+      } catch {
+        // ignore invalid chat
+      }
     }
   }, [router]);
 
@@ -432,10 +437,10 @@ export default function SeniorExecutiveDashboardPage() {
                   color: "#ffffff",
                 }}
               >
-                EXEC-01 \u00b7 SENIOR EXECUTIVE ADMIN
+                EXEC-01 | SENIOR EXECUTIVE ADMIN
               </span>
               <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a", marginTop: "6px" }}>
-                {currentUser.name} \u2014 Executive & Senior Management
+                {currentUser.name} - Executive & Senior Management
               </h1>
               <p style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
                 Current Doings: {currentUser.trackedApps[0]?.activeTask || execDept.purpose}
@@ -552,8 +557,8 @@ export default function SeniorExecutiveDashboardPage() {
                     </p>
                   </div>
                   <div style={{ display: "flex", gap: "12px", fontSize: "12px", fontWeight: 600 }}>
-                    <span style={{ color: "#0f172a" }}>\u25cf Revenue</span>
-                    <span style={{ color: "#0369a1" }}>\u25cf Cost</span>
+                    <span style={{ color: "#0f172a" }}>* Revenue</span>
+                    <span style={{ color: "#0369a1" }}>* Cost</span>
                   </div>
                 </div>
 
@@ -609,10 +614,10 @@ export default function SeniorExecutiveDashboardPage() {
                           }}
                         >
                           <strong style={{ color: "#0f172a" }}>
-                            {dept.code} \u2014 {dept.name}
+                            {dept.code} - {dept.name}
                           </strong>
                           <span style={{ color: "#475569", fontWeight: 600 }}>
-                            KES {dept.weeklyRevenueK.toLocaleString()}k \u00b7 KPI {dept.kpiScore}%
+                            KES {dept.weeklyRevenueK.toLocaleString()}k | KPI {dept.kpiScore}%
                           </span>
                         </div>
                         <div
@@ -682,7 +687,7 @@ export default function SeniorExecutiveDashboardPage() {
                           </span>
                         </div>
                         <div style={{ fontSize: "12.5px", color: "#475569", marginTop: "2px" }}>
-                          {member.role} \u00b7 {member.committee}
+                          {member.role} | {member.committee}
                         </div>
                       </div>
                       <div style={{ fontSize: "12px", fontWeight: 600, color: "#0f172a" }}>
@@ -730,7 +735,7 @@ export default function SeniorExecutiveDashboardPage() {
                     >
                       {DEPARTMENTS.map((d) => (
                         <option key={d.code} value={d.code}>
-                          {d.code} \u2014 {d.name}
+                          {d.code} - {d.name}
                         </option>
                       ))}
                     </select>
@@ -955,7 +960,7 @@ export default function SeniorExecutiveDashboardPage() {
                               color: dept.accent,
                             }}
                           >
-                            {dept.code} \u00b7 {dept.badge}
+                            {dept.code} | {dept.badge}
                           </span>
                           <span style={{ fontSize: "12px", fontWeight: 700, color: "#475569" }}>
                             KPI {dept.kpiScore}%
