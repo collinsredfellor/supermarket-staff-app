@@ -29,6 +29,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
   const [handoffNote, setHandoffNote] = useState("");
   const [handoffDoc, setHandoffDoc] = useState("");
+  const [sessionRole, setSessionRole] = useState<string>("SENIOR_EXEC_ADMIN");
 
   // Strategy Co-Admin Appointment inside Department
   const [coAdminName, setCoAdminName] = useState("");
@@ -55,8 +56,28 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     const savedStaff = localStorage.getItem("sm_erp_staff");
     if (savedStaff) {
       try {
-        parsedStaff = JSON.parse(savedStaff);
-        setStaffList(parsedStaff);
+        const parsed = JSON.parse(savedStaff);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          parsedStaff = parsed;
+          setStaffList(parsedStaff);
+        }
+      } catch {}
+    }
+
+    const rawSession = localStorage.getItem("sm_erp_session");
+    let currentSessionStaffId = "";
+    if (rawSession) {
+      try {
+        const session = JSON.parse(rawSession) as {
+          role?: string;
+          staffId?: string;
+        };
+        if (session.role) {
+          setSessionRole(session.role);
+        }
+        if (session.staffId) {
+          currentSessionStaffId = session.staffId;
+        }
       } catch {}
     }
 
@@ -64,10 +85,16 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
       const rankedDeptWorkers = parsedStaff
         .filter((s) => s.departmentCode === department.code)
         .sort((a, b) => b.rankScore - a.rankScore);
-      if (rankedDeptWorkers.length > 0) {
-        setSelectedStaffId(rankedDeptWorkers[0].id);
-      } else if (parsedStaff.length > 0) {
-        setSelectedStaffId(parsedStaff[0].id);
+
+      let preferredId = rankedDeptWorkers[0]?.id || parsedStaff[0]?.id || "";
+      if (
+        currentSessionStaffId &&
+        rankedDeptWorkers.some((w) => w.id === currentSessionStaffId)
+      ) {
+        preferredId = currentSessionStaffId;
+      }
+      if (preferredId) {
+        setSelectedStaffId(preferredId);
       }
     }
 
@@ -121,6 +148,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     selectableWorkers.find((w) => w.id === selectedStaffId) || selectableWorkers[0];
 
   const canManageStrategy =
+    sessionRole === "SENIOR_EXEC_ADMIN" ||
     Boolean(activeWorker?.isStrategyCoAdmin) ||
     activeWorker?.id === deptExecutiveAdmin?.id ||
     activeWorker?.departmentCode === "EXEC-01";
@@ -128,6 +156,12 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   function persistStaff(next: StaffMember[]) {
     setStaffList(next);
     localStorage.setItem("sm_erp_staff", JSON.stringify(next));
+  }
+
+  function handleSignOut() {
+    document.cookie = "staff_admin_auth=; path=/; max-age=0";
+    localStorage.removeItem("sm_erp_session");
+    router.push("/");
   }
 
   function handleAppointStrategyCoAdmin(e: FormEvent) {
@@ -252,13 +286,23 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
       >
         <div>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-            <Link
-              href="/dashboard"
+            {sessionRole === "SENIOR_EXEC_ADMIN" && (
+              <Link
+                href="/dashboard"
+                className="btn-secondary"
+                style={{ textDecoration: "none", padding: "6px 12px", fontSize: "12.5px" }}
+              >
+                ← Senior Executive Portal
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={handleSignOut}
               className="btn-secondary"
-              style={{ textDecoration: "none", padding: "6px 12px", fontSize: "12.5px" }}
+              style={{ padding: "6px 12px", fontSize: "12.5px" }}
             >
-              ← Senior Executive Portal
-            </Link>
+              Sign Out
+            </button>
             <span
               style={{
                 fontSize: "11.5px",
@@ -373,7 +417,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
             </div>
           </div>
 
-          {/* Appoint Strategy Co-Admin Form (Department Exec Admin / Strategy Co-Admin / EXEC-01) */}
+          {/* Appoint Strategy Co-Admin Form */}
           <div style={{ marginTop: "18px", paddingTop: "14px", borderTop: "1px solid #e2e8f0" }}>
             <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
               Appoint Department Strategy Co-Admin
