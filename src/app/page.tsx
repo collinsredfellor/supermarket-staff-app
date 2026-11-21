@@ -1,23 +1,82 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { DEPARTMENTS, INITIAL_STAFF, StaffMember } from "@/lib/erpData";
 
-export default function AdminLoginPage() {
+export const STAFF_SHARED_PASSKEY = "staff123";
+
+export default function UnifiedStaffLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [staffDirectory, setStaffDirectory] = useState<StaffMember[]>(INITIAL_STAFF);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sm_erp_staff");
+    if (saved) {
+      try {
+        const parsed: StaffMember[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setStaffDirectory(parsed);
+        }
+      } catch {}
+    }
+  }, []);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const cleanName = name.trim();
 
-    if (username.trim() === "admin" && password === "admin123") {
+    // 1. Senior Executive Admin (EXEC-01)
+    if (cleanName.toLowerCase() === "collins musa" && password === "eucabeth1musa") {
+      const execUser =
+        staffDirectory.find((s) => s.name.toLowerCase() === "collins musa") || INITIAL_STAFF[0];
+
       document.cookie = "staff_admin_auth=1; path=/; max-age=86400";
+      localStorage.setItem(
+        "sm_erp_session",
+        JSON.stringify({
+          role: "SENIOR_EXEC_ADMIN",
+          staffId: execUser.id,
+          name: execUser.name,
+          departmentCode: "EXEC-01",
+        })
+      );
       router.push("/dashboard");
-    } else {
-      setError("Invalid credentials. Use admin / admin123.");
+      return;
     }
+
+    // 2. Department Staff / Dept Executive Admin / Strategy Co-Admin
+    const matchedStaff = staffDirectory.find(
+      (member) => member.name.toLowerCase() === cleanName.toLowerCase()
+    );
+
+    if (
+      matchedStaff &&
+      (password === matchedStaff.badgeCode || password === STAFF_SHARED_PASSKEY)
+    ) {
+      const dept =
+        DEPARTMENTS.find((d) => d.code === matchedStaff.departmentCode) || DEPARTMENTS[0];
+
+      document.cookie = "staff_admin_auth=1; path=/; max-age=86400";
+      localStorage.setItem(
+        "sm_erp_session",
+        JSON.stringify({
+          role: "DEPT_STAFF",
+          staffId: matchedStaff.id,
+          name: matchedStaff.name,
+          departmentCode: matchedStaff.departmentCode,
+        })
+      );
+      router.push(`/departments/${dept.slug}`);
+      return;
+    }
+
+    setError(
+      "Invalid credentials. Enter your registered Name and Badge Code (or staff passkey)."
+    );
   }
 
   return (
@@ -66,14 +125,22 @@ export default function AdminLoginPage() {
                 marginBottom: "16px",
               }}
             >
-              SM-ORG-001 • Executive Portal
+              SM-ORG-001 • Staff Portal
             </span>
-            <h1 style={{ fontSize: "26px", fontWeight: 700, lineHeight: 1.25, color: "#0f172a", marginBottom: "12px" }}>
+            <h1
+              style={{
+                fontSize: "26px",
+                fontWeight: 700,
+                lineHeight: 1.25,
+                color: "#0f172a",
+                marginBottom: "12px",
+              }}
+            >
               Supermarket StaffApp
             </h1>
             <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6 }}>
-              Senior Executive Admin workspace for board & shareholder oversight, supermarket
-              transaction tracking, strategy co-admin appointments, and departmental control.
+              Unified sign-in gateway for all supermarket team members. Your credentials
+              automatically route you to your assigned role and department dashboard.
             </p>
           </div>
 
@@ -86,7 +153,7 @@ export default function AdminLoginPage() {
               color: "#64748b",
             }}
           >
-            Executive & Senior Management (EXEC-01) • 9 Store Departments
+            Executive Command • 9 Store Departments • Role-Routed Dashboards
           </div>
         </section>
 
@@ -100,34 +167,64 @@ export default function AdminLoginPage() {
             backgroundColor: "#ffffff",
           }}
         >
-          <h2 style={{ fontSize: "21px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
-            Senior Executive Sign In
+          <h2
+            style={{
+              fontSize: "21px",
+              fontWeight: 700,
+              color: "#0f172a",
+              marginBottom: "6px",
+            }}
+          >
+            Staff & Executive Sign In
           </h2>
           <p style={{ color: "#64748b", fontSize: "13.5px", marginBottom: "22px" }}>
-            Sign in to access Executive & Senior Management command.
+            Sign in with your full name and password or badge code.
           </p>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#334155" }}>
-              <span>Username</span>
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+          >
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#334155",
+              }}
+            >
+              <span>Full Name</span>
               <input
                 type="text"
                 className="pro-input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                autoComplete="username"
                 required
               />
             </label>
 
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#334155" }}>
-              <span>Password</span>
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#334155",
+              }}
+            >
+              <span>Password / Badge Code</span>
               <input
                 type="password"
                 className="pro-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="••••••••••••"
+                autoComplete="current-password"
                 required
               />
             </label>
@@ -147,8 +244,12 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-            <button type="submit" className="btn-primary" style={{ marginTop: "4px", padding: "12px 16px" }}>
-              Enter Senior Executive Portal →
+            <button
+              type="submit"
+              className="btn-primary"
+              style={{ marginTop: "4px", padding: "12px 16px" }}
+            >
+              Sign In to Dashboard →
             </button>
           </form>
         </section>
