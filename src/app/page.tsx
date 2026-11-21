@@ -27,11 +27,11 @@ export default function AdminLoginPage() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: "20px",
+        padding: "24px",
       }}
     >
       <div
-        className="glass-card"
+        className="pro-card"
         style={{
           width: "100%",
           maxWidth: "880px",
@@ -40,7 +40,6 @@ export default function AdminLoginPage() {
           overflow: "hidden",
         }}
       >
-        {/* Left Branding Panel */}
         <section
           style={{
             flex: "1 1 320px",
@@ -48,34 +47,33 @@ export default function AdminLoginPage() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
-            background: "linear-gradient(160deg, rgba(16, 185, 129, 0.18), rgba(59, 130, 246, 0.12))",
-            borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+            backgroundColor: "#f8fafc",
+            borderRight: "1px solid #e2e8f0",
           }}
         >
           <div>
             <span
               style={{
                 display: "inline-block",
-                padding: "6px 12px",
-                borderRadius: "999px",
-                fontSize: "12px",
-                fontWeight: 600,
-                letterSpacing: "0.06em",
+                padding: "5px 11px",
+                borderRadius: "6px",
+                fontSize: "11.5px",
+                fontWeight: 700,
+                letterSpacing: "0.05em",
                 textTransform: "uppercase",
-                background: "rgba(16, 185, 129, 0.2)",
-                color: "#6ee7b7",
-                border: "1px solid rgba(110, 231, 183, 0.35)",
-                marginBottom: "18px",
+                backgroundColor: "#e2e8f0",
+                color: "#0f172a",
+                marginBottom: "16px",
               }}
             >
-              Enterprise Retail Suite
+              SM-ORG-001 • Executive Portal
             </span>
-            <h1 style={{ fontSize: "28px", fontWeight: 700, lineHeight: 1.2, marginBottom: "12px" }}>
+            <h1 style={{ fontSize: "26px", fontWeight: 700, lineHeight: 1.25, color: "#0f172a", marginBottom: "12px" }}>
               Supermarket StaffApp
             </h1>
-            <p style={{ color: "#cbd5e1", fontSize: "14px", lineHeight: 1.6 }}>
-              Centralized administrative command for store departments, inventory flow,
-              procurement, finance, and staff operations.
+            <p style={{ color: "#475569", fontSize: "14px", lineHeight: 1.6 }}>
+              Senior Executive Admin workspace for board & shareholder oversight, supermarket
+              transaction tracking, strategy co-admin appointments, and departmental control.
             </p>
           </div>
 
@@ -83,16 +81,15 @@ export default function AdminLoginPage() {
             style={{
               marginTop: "28px",
               paddingTop: "16px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+              borderTop: "1px solid #e2e8f0",
               fontSize: "12px",
-              color: "#94a3b8",
+              color: "#64748b",
             }}
           >
-            9 Active Store Departments • Role-Based Control
+            Executive & Senior Management (EXEC-01) • 9 Store Departments
           </div>
         </section>
 
-        {/* Right Sign-In Flex Card Section */}
         <section
           style={{
             flex: "1 1 340px",
@@ -100,55 +97,38 @@ export default function AdminLoginPage() {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            backgroundColor: "#ffffff",
           }}
         >
-          <h2 style={{ fontSize: "22px", fontWeight: 600, marginBottom: "6px" }}>
-            Admin Portal Sign In
+          <h2 style={{ fontSize: "21px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
+            Senior Executive Sign In
           </h2>
-          <p style={{ color: "#94a3b8", fontSize: "14px", marginBottom: "24px" }}>
-            Enter your administrator credentials to manage departments.
+          <p style={{ color: "#64748b", fontSize: "13.5px", marginBottom: "22px" }}>
+            Sign in to access Executive & Senior Management command.
           </p>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", color: "#e2e8f0" }}>
-              <span>Admin Username</span>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#334155" }}>
+              <span>Username</span>
               <input
                 type="text"
+                className="pro-input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="admin"
                 required
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
-                  background: "rgba(15, 23, 42, 0.55)",
-                  color: "#f8fafc",
-                  fontSize: "14px",
-                  outline: "none",
-                }}
               />
             </label>
 
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", color: "#e2e8f0" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#334155" }}>
               <span>Password</span>
               <input
                 type="password"
+                className="pro-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  borderRadius: "10px",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
-                  background: "rgba(15, 23, 42, 0.55)",
-                  color: "#f8fafc",
-                  fontSize: "14px",
-                  outline: "none",
-                }}
               />
             </label>
 
@@ -157,9 +137,9 @@ export default function AdminLoginPage() {
                 style={{
                   padding: "10px 12px",
                   borderRadius: "8px",
-                  background: "rgba(239, 68, 68, 0.18)",
-                  border: "1px solid rgba(248, 113, 113, 0.4)",
-                  color: "#fca5a5",
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#b91c1c",
                   fontSize: "13px",
                 }}
               >
@@ -167,22 +147,8 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              style={{
-                marginTop: "6px",
-                padding: "12px 16px",
-                borderRadius: "10px",
-                border: "none",
-                background: "linear-gradient(135deg, #10b981, #0ea5e9)",
-                color: "#ffffff",
-                fontWeight: 600,
-                fontSize: "15px",
-                cursor: "pointer",
-                boxShadow: "0 8px 20px rgba(14, 165, 233, 0.3)",
-              }}
-            >
-              Access Admin Dashboard →
+            <button type="submit" className="btn-primary" style={{ marginTop: "4px", padding: "12px 16px" }}>
+              Enter Senior Executive Portal →
             </button>
           </form>
         </section>
