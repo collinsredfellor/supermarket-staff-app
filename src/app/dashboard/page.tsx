@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent, ChangeEvent } from "react";
+import { useEffect, useState, FormEvent, ChangeEvent, KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -31,6 +31,7 @@ export default function SeniorExecutiveDashboardPage() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>(INITIAL_TIMELINE);
   const [transactions] = useState<SupermarketTransaction[]>(INITIAL_TRANSACTIONS);
 
+  // Appoint Staff / Strategy Co-Admin Form
   const [newName, setNewName] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newDept, setNewDept] = useState("EXEC-01");
@@ -39,12 +40,17 @@ export default function SeniorExecutiveDashboardPage() {
   const [makeStrategyCoAdmin, setMakeStrategyCoAdmin] = useState(true);
   const [statusMessage, setStatusMessage] = useState("");
 
+  // Chat Mode Messages State
   const [passphrase, setPassphrase] = useState("SM-ORG-001-SECURE");
+  const [chatChannel, setChatChannel] = useState<string>("ALL");
   const [chatInput, setChatInput] = useState("");
+  const [enterToSend, setEnterToSend] = useState(true);
   const [encryptedMessages, setEncryptedMessages] = useState<EncryptedChatMessage[]>([]);
   const [decryptedMap, setDecryptedMap] = useState<Record<string, string>>({});
   const [showCipherRaw, setShowCipherRaw] = useState(false);
+  const [chatNotice, setChatNotice] = useState("");
 
+  // Editable Profile State
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -52,6 +58,16 @@ export default function SeniorExecutiveDashboardPage() {
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [editBio, setEditBio] = useState("");
   const [profileSavedMsg, setProfileSavedMsg] = useState("");
+
+  function loadProfileForm(member: StaffMember) {
+    setEditName(member.name || "");
+    setEditUsername(member.username || "");
+    setEditPhone(member.phone || "");
+    setEditPassword(member.password || "");
+    setEditAvatarUrl(member.avatarUrl || "");
+    setEditBio(member.bio || "");
+    setProfileSavedMsg("");
+  }
 
   useEffect(() => {
     const hasAuth = document.cookie
@@ -73,7 +89,7 @@ export default function SeniorExecutiveDashboardPage() {
           setStaffList(parsed);
         }
       } catch {
-        // ignore invalid storage
+        // ignore invalid JSON
       }
     }
 
@@ -96,19 +112,14 @@ export default function SeniorExecutiveDashboardPage() {
           activeId = session.staffId;
         }
       } catch {
-        // ignore invalid session
+        // ignore invalid session JSON
       }
     }
 
     setCurrentUserId(activeId);
     const me = loadedStaff.find((s) => s.id === activeId) || loadedStaff[0];
     if (me) {
-      setEditName(me.name);
-      setEditUsername(me.username);
-      setEditPhone(me.phone);
-      setEditPassword(me.password);
-      setEditAvatarUrl(me.avatarUrl || "");
-      setEditBio(me.bio || "");
+      loadProfileForm(me);
     }
 
     setAuthorized(true);
@@ -118,7 +129,7 @@ export default function SeniorExecutiveDashboardPage() {
       try {
         setTimeline(JSON.parse(savedTimeline));
       } catch {
-        // ignore invalid timeline
+        // ignore
       }
     }
 
@@ -127,7 +138,7 @@ export default function SeniorExecutiveDashboardPage() {
       try {
         setEncryptedMessages(JSON.parse(savedChat));
       } catch {
-        // ignore invalid chat
+        // ignore
       }
     }
   }, [router]);
@@ -244,13 +255,13 @@ export default function SeniorExecutiveDashboardPage() {
     persistStaff(updated);
   }
 
-  async function handleSendEncryptedChat(e: FormEvent) {
-    e.preventDefault();
+  async function submitChatMessage() {
     if (!chatInput.trim()) return;
+    const targetDept = chatChannel === "ALL" ? "EXEC-01" : chatChannel;
     const { ivBase64, cipherBase64 } = await encryptMessage(chatInput.trim(), passphrase);
     const newMsg: EncryptedChatMessage = {
       id: `MSG-${Date.now()}`,
-      departmentCode: "EXEC-01",
+      departmentCode: targetDept,
       senderName: currentUser.name,
       senderRole: currentUser.title,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -261,6 +272,20 @@ export default function SeniorExecutiveDashboardPage() {
     setEncryptedMessages(updated);
     localStorage.setItem("sm_erp_encrypted_chat", JSON.stringify(updated));
     setChatInput("");
+    setChatNotice("Message encrypted & sent to staff chat.");
+    setTimeout(() => setChatNotice(""), 2500);
+  }
+
+  async function handleSendEncryptedChat(e: FormEvent) {
+    e.preventDefault();
+    await submitChatMessage();
+  }
+
+  function handleChatKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (enterToSend && e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void submitChatMessage();
+    }
   }
 
   function handleAvatarFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -300,7 +325,7 @@ export default function SeniorExecutiveDashboardPage() {
         departmentCode: "EXEC-01",
       })
     );
-    setProfileSavedMsg("Profile details updated.");
+    setProfileSavedMsg("Profile updated and saved.");
   }
 
   if (!authorized) {
@@ -324,23 +349,35 @@ export default function SeniorExecutiveDashboardPage() {
     { label: "W6", rev: 482, cost: 291 },
   ];
 
-  const revPolyline = trendPoints
-    .map((p, i) => `${55 + i * 78},${165 - (p.rev / 520) * 125}`)
-    .join(" ");
+  const revCoords = trendPoints.map((p, i) => ({
+    x: 58 + i * 76,
+    y: 162 - (p.rev / 520) * 122,
+  }));
 
-  const costPolyline = trendPoints
-    .map((p, i) => `${55 + i * 78},${165 - (p.cost / 520) * 125}`)
-    .join(" ");
+  const costCoords = trendPoints.map((p, i) => ({
+    x: 58 + i * 76,
+    y: 162 - (p.cost / 520) * 122,
+  }));
+
+  const revPolyline = revCoords.map((pt) => `${pt.x},${pt.y}`).join(" ");
+  const costPolyline = costCoords.map((pt) => `${pt.x},${pt.y}`).join(" ");
+  const revAreaPoints = `${revCoords[0].x},162 ${revPolyline} ${revCoords[revCoords.length - 1].x},162`;
+
+  const visibleMessages =
+    chatChannel === "ALL"
+      ? encryptedMessages
+      : encryptedMessages.filter((m) => m.departmentCode === chatChannel);
 
   return (
     <>
+      {/* Instagram Dock: Bottom bar on mobile, slanting downwards on left on desktop */}
       <nav className="insta-dock" aria-label="Workspace Navigation">
         <button
           type="button"
           className={`insta-dock-btn ${activeTab === "home" ? "active" : ""}`}
           onClick={() => setActiveTab("home")}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
             <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" />
           </svg>
           <span>Home</span>
@@ -351,7 +388,7 @@ export default function SeniorExecutiveDashboardPage() {
           className={`insta-dock-btn ${activeTab === "messages" ? "active" : ""}`}
           onClick={() => setActiveTab("messages")}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           <span>Messages</span>
@@ -360,9 +397,12 @@ export default function SeniorExecutiveDashboardPage() {
         <button
           type="button"
           className={`insta-dock-btn ${activeTab === "profile" ? "active" : ""}`}
-          onClick={() => setActiveTab("profile")}
+          onClick={() => {
+            loadProfileForm(currentUser);
+            setActiveTab("profile");
+          }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
@@ -381,6 +421,7 @@ export default function SeniorExecutiveDashboardPage() {
           paddingTop: "24px",
         }}
       >
+        {/* Top Header Showing User Name & Current Doings */}
         <header
           className="pro-card"
           style={{
@@ -399,8 +440,8 @@ export default function SeniorExecutiveDashboardPage() {
                 src={currentUser.avatarUrl}
                 alt={currentUser.name}
                 style={{
-                  width: "52px",
-                  height: "52px",
+                  width: "54px",
+                  height: "54px",
                   borderRadius: "999px",
                   objectFit: "cover",
                   border: "2px solid #0f172a",
@@ -409,16 +450,16 @@ export default function SeniorExecutiveDashboardPage() {
             ) : (
               <div
                 style={{
-                  width: "52px",
-                  height: "52px",
+                  width: "54px",
+                  height: "54px",
                   borderRadius: "999px",
-                  backgroundColor: "#0f172a",
+                  background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
                   color: "#ffffff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 700,
-                  fontSize: "18px",
+                  fontSize: "19px",
                 }}
               >
                 {currentUser.name.charAt(0)}
@@ -428,8 +469,8 @@ export default function SeniorExecutiveDashboardPage() {
               <span
                 style={{
                   display: "inline-block",
-                  padding: "3px 9px",
-                  borderRadius: "6px",
+                  padding: "3px 10px",
+                  borderRadius: "999px",
                   fontSize: "11px",
                   fontWeight: 700,
                   letterSpacing: "0.05em",
@@ -443,7 +484,7 @@ export default function SeniorExecutiveDashboardPage() {
                 {currentUser.name} - Executive & Senior Management
               </h1>
               <p style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
-                Current Doings: {currentUser.trackedApps[0]?.activeTask || execDept.purpose}
+                <strong>His Doings:</strong> {currentUser.trackedApps[0]?.activeTask || execDept.purpose}
               </p>
             </div>
           </div>
@@ -462,6 +503,7 @@ export default function SeniorExecutiveDashboardPage() {
           </div>
         </header>
 
+        {/* HOME TAB */}
         {activeTab === "home" && (
           <>
             <section className="pro-card" style={{ padding: "18px 22px", marginBottom: "20px" }}>
@@ -474,8 +516,8 @@ export default function SeniorExecutiveDashboardPage() {
                     key={app.appName}
                     style={{
                       flex: "1 1 280px",
-                      padding: "12px 14px",
-                      borderRadius: "10px",
+                      padding: "13px 15px",
+                      borderRadius: "12px",
                       backgroundColor: "#f8fafc",
                       border: "1px solid #e2e8f0",
                     }}
@@ -492,7 +534,18 @@ export default function SeniorExecutiveDashboardPage() {
                       <span>{app.appName}</span>
                       <span style={{ color: "#047857" }}>{app.progress}%</span>
                     </div>
-                    <p style={{ fontSize: "12.5px", color: "#475569" }}>{app.activeTask}</p>
+                    <p style={{ fontSize: "12.5px", color: "#475569", marginBottom: "8px" }}>
+                      {app.activeTask}
+                    </p>
+                    <div className="modern-bar-track">
+                      <div
+                        className="modern-bar-fill"
+                        style={{
+                          width: `${app.progress}%`,
+                          background: "linear-gradient(90deg, #0f172a 0%, #0284c7 100%)",
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -538,6 +591,7 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
+            {/* Modernized Area/Line Chart & Department Bars */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1.1 1 400px", padding: "22px" }}>
                 <div
@@ -550,7 +604,7 @@ export default function SeniorExecutiveDashboardPage() {
                 >
                   <div>
                     <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
-                      Executive Revenue vs. Cost Graph
+                      Executive Revenue vs. Cost Chart
                     </h2>
                     <p style={{ fontSize: "12.5px", color: "#64748b" }}>
                       6-cycle performance curve (KES in 10,000s)
@@ -558,23 +612,30 @@ export default function SeniorExecutiveDashboardPage() {
                   </div>
                   <div style={{ display: "flex", gap: "12px", fontSize: "12px", fontWeight: 600 }}>
                     <span style={{ color: "#0f172a" }}>* Revenue</span>
-                    <span style={{ color: "#0369a1" }}>* Cost</span>
+                    <span style={{ color: "#0284c7" }}>* Cost</span>
                   </div>
                 </div>
 
                 <svg viewBox="0 0 520 200" style={{ width: "100%", height: "auto", display: "block" }}>
-                  <line x1="50" y1="165" x2="495" y2="165" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <line x1="50" y1="30" x2="50" y2="165" stroke="#cbd5e1" strokeWidth="1.5" />
-                  <line x1="50" y1="100" x2="495" y2="100" stroke="#e2e8f0" strokeDasharray="4 4" />
-                  <polyline fill="none" stroke="#0f172a" strokeWidth="3" points={revPolyline} />
-                  <polyline fill="none" stroke="#0369a1" strokeWidth="2.5" strokeDasharray="5 3" points={costPolyline} />
+                  <defs>
+                    <linearGradient id="revAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0f172a" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="#0f172a" stopOpacity="0.01" />
+                    </linearGradient>
+                  </defs>
+                  <line x1="50" y1="162" x2="495" y2="162" stroke="#cbd5e1" strokeWidth="1.5" />
+                  <line x1="50" y1="30" x2="50" y2="162" stroke="#cbd5e1" strokeWidth="1.5" />
+                  <line x1="50" y1="96" x2="495" y2="96" stroke="#e2e8f0" strokeDasharray="4 4" />
+                  <polygon fill="url(#revAreaGrad)" points={revAreaPoints} />
+                  <polyline fill="none" stroke="#0f172a" strokeWidth="3.2" strokeLinecap="round" points={revPolyline} />
+                  <polyline fill="none" stroke="#0284c7" strokeWidth="2.6" strokeDasharray="5 4" strokeLinecap="round" points={costPolyline} />
                   {trendPoints.map((pt, idx) => {
-                    const x = 55 + idx * 78;
-                    const y = 165 - (pt.rev / 520) * 125;
+                    const coord = revCoords[idx];
                     return (
                       <g key={pt.label}>
-                        <circle cx={x} cy={y} r="4.5" fill="#0f172a" />
-                        <text x={x} y="185" textAnchor="middle" fontSize="11" fill="#475569">
+                        <circle cx={coord.x} cy={coord.y} r="6" fill="#0f172a" fillOpacity="0.16" />
+                        <circle cx={coord.x} cy={coord.y} r="3.8" fill="#0f172a" />
+                        <text x={coord.x} y="184" textAnchor="middle" fontSize="11" fontWeight="600" fill="#475569">
                           {pt.label}
                         </text>
                       </g>
@@ -595,7 +656,7 @@ export default function SeniorExecutiveDashboardPage() {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "10px",
+                    gap: "11px",
                     maxHeight: "220px",
                     overflowY: "auto",
                     paddingRight: "4px",
@@ -617,24 +678,15 @@ export default function SeniorExecutiveDashboardPage() {
                             {dept.code} - {dept.name}
                           </strong>
                           <span style={{ color: "#475569", fontWeight: 600 }}>
-                            KES {dept.weeklyRevenueK.toLocaleString()}k | KPI {dept.kpiScore}%
+                            {widthPct}% | KES {dept.weeklyRevenueK.toLocaleString()}k
                           </span>
                         </div>
-                        <div
-                          style={{
-                            width: "100%",
-                            height: "9px",
-                            borderRadius: "999px",
-                            backgroundColor: "#e2e8f0",
-                            overflow: "hidden",
-                          }}
-                        >
+                        <div className="modern-bar-track">
                           <div
+                            className="modern-bar-fill"
                             style={{
                               width: `${widthPct}%`,
-                              height: "100%",
-                              backgroundColor: dept.accent,
-                              borderRadius: "999px",
+                              background: `linear-gradient(90deg, ${dept.accent} 0%, #334155 100%)`,
                             }}
                           />
                         </div>
@@ -645,6 +697,7 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
+            {/* Shareholders, Board & Strategy Co-Admin Appointment */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1.2 1 440px", padding: "22px" }}>
                 <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
@@ -841,6 +894,7 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
+            {/* Transactions Table */}
             <section className="pro-card" style={{ padding: "22px", marginBottom: "24px" }}>
               <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
                 Supermarket Transaction Details
@@ -909,6 +963,7 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
+            {/* All 9 Department Cards */}
             <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", marginBottom: "12px" }}>
               Departmental Workspaces (Highest-Ranked Member = Department Executive Admin)
             </h2>
@@ -1009,112 +1064,143 @@ export default function SeniorExecutiveDashboardPage() {
           </>
         )}
 
+        {/* MESSAGES TAB (Chat Mode) */}
         {activeTab === "messages" && (
           <section className="pro-card" style={{ padding: "24px" }}>
             <div
               style={{
                 display: "flex",
+                flexWrap: "wrap",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "12px",
+                gap: "12px",
+                marginBottom: "14px",
               }}
             >
               <div>
                 <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>
-                  Staff Encrypted Communication
+                  Staff Chat Mode ({visibleMessages.length} messages)
                 </h2>
                 <p style={{ fontSize: "13px", color: "#64748b" }}>
-                  AES-256 encrypted channel for executive & departmental coordination
+                  Real-time encrypted messaging room for supermarket staff
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCipherRaw(!showCipherRaw)}
-                className="btn-secondary"
-              >
-                {showCipherRaw ? "Show Decrypted" : "Inspect Ciphertext"}
-              </button>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => setEnterToSend(!enterToSend)}
+                  className="btn-secondary"
+                >
+                  Chat Mode: {enterToSend ? "Enter to Send (ON)" : "Button Only"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCipherRaw(!showCipherRaw)}
+                  className="btn-secondary"
+                >
+                  {showCipherRaw ? "Show Decrypted" : "Inspect Ciphertext"}
+                </button>
+              </div>
             </div>
 
-            <div style={{ marginBottom: "12px" }}>
-              <label
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#475569",
-                  display: "block",
-                  marginBottom: "4px",
-                }}
-              >
-                Shared Channel Key:
-              </label>
-              <input
-                type="password"
-                className="pro-input"
-                style={{ width: "100%", maxWidth: "360px" }}
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-              />
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "12px" }}>
+              <div style={{ flex: "1 1 220px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>
+                  Channel Filter:
+                </label>
+                <select
+                  className="pro-select"
+                  style={{ width: "100%" }}
+                  value={chatChannel}
+                  onChange={(e) => setChatChannel(e.target.value)}
+                >
+                  <option value="ALL">All Staff & Departments</option>
+                  {DEPARTMENTS.map((d) => (
+                    <option key={d.code} value={d.code}>
+                      {d.code} - {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ flex: "1 1 240px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>
+                  Shared Encryption Key:
+                </label>
+                <input
+                  type="password"
+                  className="pro-input"
+                  style={{ width: "100%" }}
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                />
+              </div>
             </div>
 
             <div
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "8px",
-                minHeight: "260px",
-                maxHeight: "360px",
+                gap: "10px",
+                minHeight: "280px",
+                maxHeight: "380px",
                 overflowY: "auto",
-                padding: "12px",
-                borderRadius: "10px",
+                padding: "14px",
+                borderRadius: "12px",
                 backgroundColor: "#f8fafc",
                 border: "1px solid #e2e8f0",
                 marginBottom: "12px",
               }}
             >
-              {encryptedMessages.length === 0 ? (
-                <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "90px" }}>
-                  No staff messages yet. Send a message below.
+              {visibleMessages.length === 0 ? (
+                <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "105px" }}>
+                  No messages in this channel yet. Start chatting below.
                 </p>
               ) : (
-                encryptedMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "8px",
-                      backgroundColor: "#ffffff",
-                      border: "1px solid #e2e8f0",
-                    }}
-                  >
+                visibleMessages.map((msg) => {
+                  const isMine = msg.senderName === currentUser.name;
+                  return (
                     <div
+                      key={msg.id}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "11.5px",
-                        color: "#64748b",
-                        marginBottom: "3px",
+                        alignSelf: isMine ? "flex-end" : "flex-start",
+                        maxWidth: "82%",
+                        padding: "10px 14px",
+                        borderRadius: "12px",
+                        backgroundColor: isMine ? "#0f172a" : "#ffffff",
+                        color: isMine ? "#ffffff" : "#0f172a",
+                        border: isMine ? "1px solid #0f172a" : "1px solid #e2e8f0",
                       }}
                     >
-                      <strong style={{ color: "#0f172a" }}>
-                        {msg.senderName} ({msg.departmentCode})
-                      </strong>
-                      <span>{msg.timestamp}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: "12px",
+                          fontSize: "11px",
+                          opacity: 0.8,
+                          marginBottom: "3px",
+                        }}
+                      >
+                        <strong>
+                          {msg.senderName} ({msg.departmentCode})
+                        </strong>
+                        <span>{msg.timestamp}</span>
+                      </div>
+                      <p
+                        style={{
+                          fontSize: "13.5px",
+                          wordBreak: "break-word",
+                          fontFamily: showCipherRaw ? "monospace" : "inherit",
+                        }}
+                      >
+                        {showCipherRaw
+                          ? `AES-GCM::${msg.cipherBase64}`
+                          : decryptedMap[msg.id] || "Decrypting..."}
+                      </p>
                     </div>
-                    <p
-                      style={{
-                        fontSize: "13px",
-                        color: showCipherRaw ? "#b45309" : "#0f172a",
-                        wordBreak: "break-word",
-                        fontFamily: showCipherRaw ? "monospace" : "inherit",
-                      }}
-                    >
-                      {showCipherRaw
-                        ? `AES-GCM::${msg.cipherBase64}`
-                        : decryptedMap[msg.id] || "Decrypting..."}
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -1123,17 +1209,24 @@ export default function SeniorExecutiveDashboardPage() {
                 type="text"
                 className="pro-input"
                 style={{ flex: 1 }}
-                placeholder={`Write encrypted message as ${currentUser.name}...`}
+                placeholder={`Chat as ${currentUser.name}...`}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleChatKeyDown}
               />
               <button type="submit" className="btn-primary">
-                Send Message
+                Send
               </button>
             </form>
+            {chatNotice && (
+              <p style={{ fontSize: "12px", color: "#047857", fontWeight: 600, marginTop: "8px" }}>
+                [OK] {chatNotice}
+              </p>
+            )}
           </section>
         )}
 
+        {/* PROFILE TAB */}
         {activeTab === "profile" && (
           <section className="pro-card" style={{ padding: "24px", maxWidth: "680px" }}>
             <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
@@ -1153,8 +1246,8 @@ export default function SeniorExecutiveDashboardPage() {
                     src={editAvatarUrl}
                     alt="Profile preview"
                     style={{
-                      width: "64px",
-                      height: "64px",
+                      width: "66px",
+                      height: "66px",
                       borderRadius: "999px",
                       objectFit: "cover",
                       border: "2px solid #0f172a",
@@ -1163,16 +1256,16 @@ export default function SeniorExecutiveDashboardPage() {
                 ) : (
                   <div
                     style={{
-                      width: "64px",
-                      height: "64px",
+                      width: "66px",
+                      height: "66px",
                       borderRadius: "999px",
-                      backgroundColor: "#0f172a",
+                      background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       fontWeight: 700,
-                      fontSize: "20px",
+                      fontSize: "21px",
                     }}
                   >
                     {(editName || currentUser.name).charAt(0)}
@@ -1188,7 +1281,7 @@ export default function SeniorExecutiveDashboardPage() {
                       marginBottom: "4px",
                     }}
                   >
-                    Profile Picture (Upload Image or Paste URL)
+                    Profile Picture (Upload File or Paste Image URL)
                   </label>
                   <input
                     type="file"
