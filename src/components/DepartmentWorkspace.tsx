@@ -46,7 +46,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const [decryptedMap, setDecryptedMap] = useState<Record<string, string>>({});
   const [showCipherRaw, setShowCipherRaw] = useState(false);
 
-  // Editable Profile State
+  // Editable Profile State (employees change their username & password here)
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -239,7 +239,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     persistStaff(updated);
     setSelectedStaffId(appointed.id);
     syncProfileForm(appointed);
-    setCoAdminNotice(`Appointed ${appointed.name} as Strategy Co-Admin for ${department.code}.`);
+    setCoAdminNotice(`Appointed ${appointed.name} (@${appointed.username}) as Strategy Co-Admin for ${department.code}.`);
     setCoAdminName("");
     setCoAdminRole("");
   }
@@ -337,21 +337,28 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     e.preventDefault();
     if (!activeWorker) return;
 
+    const cleanUsername = (editUsername.trim() || activeWorker.username)
+      .replace(/\s+/g, "")
+      .toLowerCase();
+    const cleanPassword = editPassword || activeWorker.password;
+
     const updated = staffList.map((member) =>
       member.id === activeWorker.id
         ? {
             ...member,
             name: editName.trim() || member.name,
-            username: editUsername.trim() || member.username,
+            username: cleanUsername,
             phone: editPhone.trim() || member.phone,
-            password: editPassword || member.password,
+            password: cleanPassword,
+            email: `${cleanUsername}@supermarket-erp.local`,
             avatarUrl: editAvatarUrl,
             bio: editBio.trim(),
           }
         : member
     );
     persistStaff(updated);
-    setProfileSavedMsg("Profile details updated.");
+    setEditUsername(cleanUsername);
+    setProfileSavedMsg("Username, password, and profile details updated.");
   }
 
   const deptChatMessages = encryptedMessages.filter(
@@ -422,70 +429,105 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
             alignItems: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-            {activeWorker.avatarUrl ? (
-              <img
-                src={activeWorker.avatarUrl}
-                alt={activeWorker.name}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+              {sessionRole === "SENIOR_EXEC_ADMIN" && (
+                <Link
+                  href="/dashboard"
+                  className="btn-secondary"
+                  style={{ textDecoration: "none", padding: "5px 11px", fontSize: "12px" }}
+                >
+                  <- Senior Executive Portal
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="btn-secondary"
+                style={{ padding: "5px 11px", fontSize: "12px" }}
+              >
+                Sign Out
+              </button>
+              <span
                 style={{
-                  width: "54px",
-                  height: "54px",
-                  borderRadius: "999px",
-                  objectFit: "cover",
-                  border: "2px solid #0f172a",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "54px",
-                  height: "54px",
-                  borderRadius: "999px",
-                  background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  fontSize: "11.5px",
                   fontWeight: 700,
-                  fontSize: "19px",
-                  flexShrink: 0,
+                  padding: "3px 10px",
+                  borderRadius: "999px",
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
                 }}
               >
-                {activeWorker.name.charAt(0)}
-              </div>
-            )}
+                {activeWorker.title}
+              </span>
+              <span
+                style={{
+                  fontSize: "11.5px",
+                  fontWeight: 700,
+                  padding: "3px 9px",
+                  borderRadius: "6px",
+                  backgroundColor: "#f1f5f9",
+                  color: department.accent,
+                }}
+              >
+                {department.code} | {department.name}
+              </span>
+            </div>
 
-            <div>
-              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                {sessionRole === "SENIOR_EXEC_ADMIN" && (
-                  <Link href="/dashboard" className="btn-secondary" style={{ textDecoration: "none", padding: "5px 11px", fontSize: "12px" }}>
-                    <- Senior Executive Portal
-                  </Link>
-                )}
-                <button type="button" onClick={handleSignOut} className="btn-secondary" style={{ padding: "5px 11px", fontSize: "12px" }}>
-                  Sign Out
-                </button>
-                <span style={{ fontSize: "11.5px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#f1f5f9", color: department.accent }}>
-                  {department.code} | {department.badge}
-                </span>
-                {deptExecutiveAdmin && (
-                  <span style={{ fontSize: "11.5px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#0f172a", color: "#ffffff" }}>
-                    Dept Executive Admin: {deptExecutiveAdmin.name}
-                  </span>
-                )}
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              {activeWorker.avatarUrl ? (
+                <img
+                  src={activeWorker.avatarUrl}
+                  alt={activeWorker.name}
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "999px",
+                    objectFit: "cover",
+                    border: "2px solid #0f172a",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "999px",
+                    background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 700,
+                    fontSize: "19px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {activeWorker.name.charAt(0)}
+                </div>
+              )}
 
-              <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a" }}>
-                {activeWorker.name} - {department.name}
-              </h1>
-              <p style={{ color: "#475569", fontSize: "13px", marginTop: "3px" }}>
-                <strong>His Doings:</strong> {activeWorker.trackedApps[0]?.activeTask || department.purpose}
-              </p>
+              <div>
+                <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", lineHeight: 1.25 }}>
+                  Encrypted: {activeWorker.name}
+                </h1>
+                <p style={{ color: "#475569", fontSize: "13px", marginTop: "3px" }}>
+                  <strong>His Doings:</strong> {activeWorker.trackedApps[0]?.activeTask || department.purpose}
+                </p>
+              </div>
             </div>
           </div>
 
           <div style={{ minWidth: "240px" }}>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#475569",
+                marginBottom: "5px",
+              }}
+            >
               Active Member in {department.code}:
             </label>
             <select
@@ -497,7 +539,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               {selectableWorkers.map((w, idx) => (
                 <option key={w.id} value={w.id}>
                   {idx === 0 ? "* [Exec Admin] " : w.isStrategyCoAdmin ? "[Co-Admin] " : ""}
-                  {w.name} - {w.title}
+                  {w.name} (@{w.username}) - {w.title}
                 </option>
               ))}
             </select>
@@ -732,7 +774,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               Edit Profile - {activeWorker.name}
             </h2>
             <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "18px" }}>
-              Change your name, username, phone number, password, profile picture, and bio.
+              Change your username, password, name, phone number, profile picture, and bio.
             </p>
 
             <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -760,7 +802,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
                 </label>
 
                 <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
-                  <span>Username</span>
+                  <span>Username (Change Anytime)</span>
                   <input type="text" className="pro-input" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} required />
                 </label>
               </div>
@@ -772,7 +814,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
                 </label>
 
                 <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
-                  <span>Password</span>
+                  <span>Password (Change Anytime)</span>
                   <input type="text" className="pro-input" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} required />
                 </label>
               </div>
