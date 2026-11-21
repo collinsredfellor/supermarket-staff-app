@@ -329,7 +329,6 @@ export default function SeniorExecutiveDashboardPage() {
 
   return (
     <>
-      {/* Instagram-Style Navigation Dock: Bottom on mobile, slanting downwards on left on desktop */}
       <nav className="insta-dock" aria-label="Workspace Navigation">
         <button
           type="button"
@@ -366,8 +365,17 @@ export default function SeniorExecutiveDashboardPage() {
         </button>
       </nav>
 
-      <main className="dock-main-content" style={{ minHeight: "100vh", maxWidth: "1280px", marginLeft: undefined, marginRight: "auto", paddingLeft: "20px", paddingRight: "20px", paddingTop: "24px" }}>
-        {/* Top Senior Executive Header with User Name & Doings Summary */}
+      <main
+        className="dock-main-content"
+        style={{
+          minHeight: "100vh",
+          maxWidth: "1280px",
+          marginRight: "auto",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          paddingTop: "24px",
+        }}
+      >
         <header
           className="pro-card"
           style={{
@@ -424,10 +432,10 @@ export default function SeniorExecutiveDashboardPage() {
                   color: "#ffffff",
                 }}
               >
-                EXEC-01 • SENIOR EXECUTIVE ADMIN
+                EXEC-01 \u00b7 SENIOR EXECUTIVE ADMIN
               </span>
               <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a", marginTop: "6px" }}>
-                {currentUser.name} — Executive & Senior Management
+                {currentUser.name} \u2014 Executive & Senior Management
               </h1>
               <p style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>
                 Current Doings: {currentUser.trackedApps[0]?.activeTask || execDept.purpose}
@@ -449,10 +457,8 @@ export default function SeniorExecutiveDashboardPage() {
           </div>
         </header>
 
-        {/* TAB 1: HOME (Working Part Dashboard, User Doings, Charts, Transactions, Co-Admins & Departments) */}
         {activeTab === "home" && (
           <>
-            {/* User Live Doings / Active Work Strip */}
             <section className="pro-card" style={{ padding: "18px 22px", marginBottom: "20px" }}>
               <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", marginBottom: "10px" }}>
                 LIVE DOINGS & ACTIVE WORK TRACKER ({currentUser.name.toUpperCase()})
@@ -469,7 +475,15 @@ export default function SeniorExecutiveDashboardPage() {
                       border: "1px solid #e2e8f0",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", fontWeight: 700, marginBottom: "4px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        marginBottom: "4px",
+                      }}
+                    >
                       <span>{app.appName}</span>
                       <span style={{ color: "#047857" }}>{app.progress}%</span>
                     </div>
@@ -479,14 +493,15 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* Executive KPI Strip */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "16px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1 1 210px", padding: "18px 20px" }}>
                 <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>EXEC-01 WEEKLY REVENUE</div>
                 <div style={{ fontSize: "23px", fontWeight: 700, color: "#0f172a", marginTop: "4px" }}>
                   KES {execDept.weeklyRevenueK.toLocaleString()},000
                 </div>
-                <div style={{ fontSize: "12px", color: "#047857", fontWeight: 600, marginTop: "4px" }}>+8.3% vs prior period</div>
+                <div style={{ fontSize: "12px", color: "#047857", fontWeight: 600, marginTop: "4px" }}>
+                  +8.3% vs prior period
+                </div>
               </div>
 
               <div className="pro-card" style={{ flex: "1 1 210px", padding: "18px 20px" }}>
@@ -494,7 +509,9 @@ export default function SeniorExecutiveDashboardPage() {
                 <div style={{ fontSize: "23px", fontWeight: 700, color: "#0f172a", marginTop: "4px" }}>
                   KES {totalTransactionsKes.toLocaleString()}
                 </div>
-                <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>{transactions.length} ledger entries</div>
+                <div style={{ fontSize: "12px", color: "#475569", marginTop: "4px" }}>
+                  {transactions.length} ledger entries
+                </div>
               </div>
 
               <div className="pro-card" style={{ flex: "1 1 210px", padding: "18px 20px" }}>
@@ -510,21 +527,33 @@ export default function SeniorExecutiveDashboardPage() {
                 <div style={{ fontSize: "23px", fontWeight: 700, color: "#0f172a", marginTop: "4px" }}>
                   {staffList.filter((s) => s.isStrategyCoAdmin).length} Appointed
                 </div>
-                <div style={{ fontSize: "12px", color: "#0369a1", fontWeight: 600, marginTop: "4px" }}>Department strategy leads</div>
+                <div style={{ fontSize: "12px", color: "#0369a1", fontWeight: 600, marginTop: "4px" }}>
+                  Department strategy leads
+                </div>
               </div>
             </section>
 
-            {/* Charts, Graphs & Department Bars */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1.1 1 400px", padding: "22px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                  }}
+                >
                   <div>
-                    <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>Executive Revenue vs. Cost Graph</h2>
-                    <p style={{ fontSize: "12.5px", color: "#64748b" }}>6-cycle performance curve (KES in 10,000s)</p>
+                    <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a" }}>
+                      Executive Revenue vs. Cost Graph
+                    </h2>
+                    <p style={{ fontSize: "12.5px", color: "#64748b" }}>
+                      6-cycle performance curve (KES in 10,000s)
+                    </p>
                   </div>
                   <div style={{ display: "flex", gap: "12px", fontSize: "12px", fontWeight: 600 }}>
-                    <span style={{ color: "#0f172a" }}>● Revenue</span>
-                    <span style={{ color: "#0369a1" }}>● Cost</span>
+                    <span style={{ color: "#0f172a" }}>\u25cf Revenue</span>
+                    <span style={{ color: "#0369a1" }}>\u25cf Cost</span>
                   </div>
                 </div>
 
@@ -557,19 +586,52 @@ export default function SeniorExecutiveDashboardPage() {
                   Weekly throughput and KPI across all 9 departments
                 </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "220px", overflowY: "auto", paddingRight: "4px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    maxHeight: "220px",
+                    overflowY: "auto",
+                    paddingRight: "4px",
+                  }}
+                >
                   {DEPARTMENTS.map((dept) => {
                     const widthPct = Math.round((dept.weeklyRevenueK / maxDeptRev) * 100);
                     return (
                       <div key={dept.code}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px" }}>
-                          <strong style={{ color: "#0f172a" }}>{dept.code} — {dept.name}</strong>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "12px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          <strong style={{ color: "#0f172a" }}>
+                            {dept.code} \u2014 {dept.name}
+                          </strong>
                           <span style={{ color: "#475569", fontWeight: 600 }}>
-                            KES {dept.weeklyRevenueK.toLocaleString()}k • KPI {dept.kpiScore}%
+                            KES {dept.weeklyRevenueK.toLocaleString()}k \u00b7 KPI {dept.kpiScore}%
                           </span>
                         </div>
-                        <div style={{ width: "100%", height: "9px", borderRadius: "999px", backgroundColor: "#e2e8f0", overflow: "hidden" }}>
-                          <div style={{ width: `${widthPct}%`, height: "100%", backgroundColor: dept.accent, borderRadius: "999px" }} />
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "9px",
+                            borderRadius: "999px",
+                            backgroundColor: "#e2e8f0",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${widthPct}%`,
+                              height: "100%",
+                              backgroundColor: dept.accent,
+                              borderRadius: "999px",
+                            }}
+                          />
                         </div>
                       </div>
                     );
@@ -578,7 +640,6 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* Shareholders, Board & Strategy Co-Admin Appointment */}
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
               <div className="pro-card" style={{ flex: "1.2 1 440px", padding: "22px" }}>
                 <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
@@ -607,15 +668,26 @@ export default function SeniorExecutiveDashboardPage() {
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                           <strong style={{ fontSize: "13.5px", color: "#0f172a" }}>{member.name}</strong>
-                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "999px", backgroundColor: "#e2e8f0", color: "#0f172a" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              padding: "2px 8px",
+                              borderRadius: "999px",
+                              backgroundColor: "#e2e8f0",
+                              color: "#0f172a",
+                            }}
+                          >
                             {member.category}
                           </span>
                         </div>
                         <div style={{ fontSize: "12.5px", color: "#475569", marginTop: "2px" }}>
-                          {member.role} • {member.committee}
+                          {member.role} \u00b7 {member.committee}
                         </div>
                       </div>
-                      <div style={{ fontSize: "12px", fontWeight: 600, color: "#0f172a" }}>{member.equityOrTerm}</div>
+                      <div style={{ fontSize: "12px", fontWeight: 600, color: "#0f172a" }}>
+                        {member.equityOrTerm}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -629,7 +701,10 @@ export default function SeniorExecutiveDashboardPage() {
                   Appoint admins to assist with department strategies
                 </p>
 
-                <form onSubmit={handleAppointOrAssign} style={{ display: "flex", flexDirection: "column", gap: "11px" }}>
+                <form
+                  onSubmit={handleAppointOrAssign}
+                  style={{ display: "flex", flexDirection: "column", gap: "11px" }}
+                >
                   <input
                     type="text"
                     className="pro-input"
@@ -647,10 +722,15 @@ export default function SeniorExecutiveDashboardPage() {
                     required
                   />
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    <select className="pro-select" style={{ flex: "1 1 170px" }} value={newDept} onChange={(e) => setNewDept(e.target.value)}>
+                    <select
+                      className="pro-select"
+                      style={{ flex: "1 1 170px" }}
+                      value={newDept}
+                      onChange={(e) => setNewDept(e.target.value)}
+                    >
                       {DEPARTMENTS.map((d) => (
                         <option key={d.code} value={d.code}>
-                          {d.code} — {d.name}
+                          {d.code} \u2014 {d.name}
                         </option>
                       ))}
                     </select>
@@ -670,8 +750,21 @@ export default function SeniorExecutiveDashboardPage() {
                     </select>
                   </div>
 
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12.5px", color: "#334155", fontWeight: 600 }}>
-                    <input type="checkbox" checked={makeStrategyCoAdmin} onChange={(e) => setMakeStrategyCoAdmin(e.target.checked)} />
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "12.5px",
+                      color: "#334155",
+                      fontWeight: 600,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={makeStrategyCoAdmin}
+                      onChange={(e) => setMakeStrategyCoAdmin(e.target.checked)}
+                    />
                     Appoint as Department Strategy Co-Admin
                   </label>
 
@@ -679,18 +772,61 @@ export default function SeniorExecutiveDashboardPage() {
                     Save Appointment
                   </button>
 
-                  {statusMessage && <p style={{ fontSize: "12.5px", color: "#047857", fontWeight: 600 }}>✓ {statusMessage}</p>}
+                  {statusMessage && (
+                    <p style={{ fontSize: "12.5px", color: "#047857", fontWeight: 600 }}>
+                      [OK] {statusMessage}
+                    </p>
+                  )}
                 </form>
 
-                <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid #e2e8f0" }}>
-                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#475569", marginBottom: "8px" }}>
+                <div
+                  style={{
+                    marginTop: "14px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid #e2e8f0",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      color: "#475569",
+                      marginBottom: "8px",
+                    }}
+                  >
                     STRATEGY CO-ADMIN ACCESS TOGGLE
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "110px", overflowY: "auto" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "6px",
+                      maxHeight: "110px",
+                      overflowY: "auto",
+                    }}
+                  >
                     {staffList.slice(0, 6).map((person) => (
-                      <div key={person.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", padding: "6px 8px", borderRadius: "6px", backgroundColor: "#f8fafc" }}>
-                        <span><strong>{person.name}</strong> ({person.departmentCode})</span>
-                        <button type="button" onClick={() => toggleStrategyCoAdmin(person.id)} className="btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }}>
+                      <div
+                        key={person.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          fontSize: "12px",
+                          padding: "6px 8px",
+                          borderRadius: "6px",
+                          backgroundColor: "#f8fafc",
+                        }}
+                      >
+                        <span>
+                          <strong>{person.name}</strong> ({person.departmentCode})
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleStrategyCoAdmin(person.id)}
+                          className="btn-secondary"
+                          style={{ padding: "4px 8px", fontSize: "11px" }}
+                        >
                           {person.isStrategyCoAdmin ? "Co-Admin: ON" : "Make Co-Admin"}
                         </button>
                       </div>
@@ -700,7 +836,6 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* Supermarket Transaction Details Table */}
             <section className="pro-card" style={{ padding: "22px", marginBottom: "24px" }}>
               <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
                 Supermarket Transaction Details
@@ -710,9 +845,22 @@ export default function SeniorExecutiveDashboardPage() {
               </p>
 
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", textAlign: "left" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "13px",
+                    textAlign: "left",
+                  }}
+                >
                   <thead>
-                    <tr style={{ borderBottom: "1px solid #e2e8f0", color: "#475569", backgroundColor: "#f8fafc" }}>
+                    <tr
+                      style={{
+                        borderBottom: "1px solid #e2e8f0",
+                        color: "#475569",
+                        backgroundColor: "#f8fafc",
+                      }}
+                    >
                       <th style={{ padding: "10px 12px" }}>Ref</th>
                       <th style={{ padding: "10px 12px" }}>Type</th>
                       <th style={{ padding: "10px 12px" }}>Dept</th>
@@ -730,9 +878,22 @@ export default function SeniorExecutiveDashboardPage() {
                         <td style={{ padding: "10px 12px", fontWeight: 600 }}>{tx.departmentCode}</td>
                         <td style={{ padding: "10px 12px", color: "#334155" }}>{tx.counterparty}</td>
                         <td style={{ padding: "10px 12px", color: "#64748b" }}>{tx.channel}</td>
-                        <td style={{ padding: "10px 12px", fontWeight: 700 }}>KES {tx.amountKes.toLocaleString()}</td>
+                        <td style={{ padding: "10px 12px", fontWeight: 700 }}>
+                          KES {tx.amountKes.toLocaleString()}
+                        </td>
                         <td style={{ padding: "10px 12px" }}>
-                          <span style={{ padding: "3px 8px", borderRadius: "6px", fontSize: "11.5px", fontWeight: 600, backgroundColor: tx.status === "Pending Approval" ? "#fef3c7" : "#dcfce7", color: tx.status === "Pending Approval" ? "#92400e" : "#166534" }}>
+                          <span
+                            style={{
+                              padding: "3px 8px",
+                              borderRadius: "6px",
+                              fontSize: "11.5px",
+                              fontWeight: 600,
+                              backgroundColor:
+                                tx.status === "Pending Approval" ? "#fef3c7" : "#dcfce7",
+                              color:
+                                tx.status === "Pending Approval" ? "#92400e" : "#166534",
+                            }}
+                          >
                             {tx.status}
                           </span>
                         </td>
@@ -743,7 +904,6 @@ export default function SeniorExecutiveDashboardPage() {
               </div>
             </section>
 
-            {/* All 9 Department Cards */}
             <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", marginBottom: "12px" }}>
               Departmental Workspaces (Highest-Ranked Member = Department Executive Admin)
             </h2>
@@ -758,30 +918,83 @@ export default function SeniorExecutiveDashboardPage() {
                   <Link
                     key={dept.code}
                     href={`/departments/${dept.slug}`}
-                    style={{ flex: "1 1 300px", textDecoration: "none", color: "inherit", display: "flex" }}
+                    style={{
+                      flex: "1 1 300px",
+                      textDecoration: "none",
+                      color: "inherit",
+                      display: "flex",
+                    }}
                   >
                     <article
                       className="pro-card pro-dept-card"
-                      style={{ width: "100%", padding: "20px", display: "flex", flexDirection: "column", justifyContent: "space-between", gap: "14px" }}
+                      style={{
+                        width: "100%",
+                        padding: "20px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        gap: "14px",
+                      }}
                     >
                       <div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                          <span style={{ fontSize: "11px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#f1f5f9", color: dept.accent }}>
-                            {dept.code} • {dept.badge}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "10px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              padding: "3px 9px",
+                              borderRadius: "6px",
+                              backgroundColor: "#f1f5f9",
+                              color: dept.accent,
+                            }}
+                          >
+                            {dept.code} \u00b7 {dept.badge}
                           </span>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#475569" }}>KPI {dept.kpiScore}%</span>
+                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#475569" }}>
+                            KPI {dept.kpiScore}%
+                          </span>
                         </div>
-                        <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>{dept.name}</h3>
-                        <p style={{ fontSize: "13px", lineHeight: 1.5, color: "#475569", marginBottom: "10px" }}>{dept.purpose}</p>
+                        <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "6px" }}>
+                          {dept.name}
+                        </h3>
+                        <p style={{ fontSize: "13px", lineHeight: 1.5, color: "#475569", marginBottom: "10px" }}>
+                          {dept.purpose}
+                        </p>
                         {execAdmin && (
-                          <div style={{ fontSize: "12px", color: "#0f172a", backgroundColor: "#f8fafc", padding: "8px 10px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              color: "#0f172a",
+                              backgroundColor: "#f8fafc",
+                              padding: "8px 10px",
+                              borderRadius: "8px",
+                              border: "1px solid #e2e8f0",
+                            }}
+                          >
                             <strong>Dept Executive Admin:</strong> {execAdmin.name}
                           </div>
                         )}
                       </div>
-                      <div style={{ paddingTop: "12px", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12.5px", fontWeight: 600 }}>
+                      <div
+                        style={{
+                          paddingTop: "12px",
+                          borderTop: "1px solid #e2e8f0",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          fontSize: "12.5px",
+                          fontWeight: 600,
+                        }}
+                      >
                         <span style={{ color: "#475569" }}>{deptWorkers.length} Staff Assigned</span>
-                        <span style={{ color: "#0f172a" }}>Open Department →</span>
+                        <span style={{ color: "#0f172a" }}>Open Department -></span>
                       </div>
                     </article>
                   </Link>
@@ -791,40 +1004,109 @@ export default function SeniorExecutiveDashboardPage() {
           </>
         )}
 
-        {/* TAB 2: MESSAGES (Encrypted Staff Communication) */}
         {activeTab === "messages" && (
           <section className="pro-card" style={{ padding: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "12px",
+              }}
+            >
               <div>
-                <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>Staff Encrypted Communication</h2>
-                <p style={{ fontSize: "13px", color: "#64748b" }}>AES-256 encrypted channel for executive & departmental coordination</p>
+                <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>
+                  Staff Encrypted Communication
+                </h2>
+                <p style={{ fontSize: "13px", color: "#64748b" }}>
+                  AES-256 encrypted channel for executive & departmental coordination
+                </p>
               </div>
-              <button type="button" onClick={() => setShowCipherRaw(!showCipherRaw)} className="btn-secondary">
+              <button
+                type="button"
+                onClick={() => setShowCipherRaw(!showCipherRaw)}
+                className="btn-secondary"
+              >
                 {showCipherRaw ? "Show Decrypted" : "Inspect Ciphertext"}
               </button>
             </div>
 
             <div style={{ marginBottom: "12px" }}>
-              <label style={{ fontSize: "12px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>
+              <label
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#475569",
+                  display: "block",
+                  marginBottom: "4px",
+                }}
+              >
                 Shared Channel Key:
               </label>
-              <input type="password" className="pro-input" style={{ width: "100%", maxWidth: "360px" }} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
+              <input
+                type="password"
+                className="pro-input"
+                style={{ width: "100%", maxWidth: "360px" }}
+                value={passphrase}
+                onChange={(e) => setPassphrase(e.target.value)}
+              />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", minHeight: "260px", maxHeight: "360px", overflowY: "auto", padding: "12px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: "12px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                minHeight: "260px",
+                maxHeight: "360px",
+                overflowY: "auto",
+                padding: "12px",
+                borderRadius: "10px",
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                marginBottom: "12px",
+              }}
+            >
               {encryptedMessages.length === 0 ? (
                 <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "90px" }}>
                   No staff messages yet. Send a message below.
                 </p>
               ) : (
                 encryptedMessages.map((msg) => (
-                  <div key={msg.id} style={{ padding: "10px 12px", borderRadius: "8px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", color: "#64748b", marginBottom: "3px" }}>
-                      <strong style={{ color: "#0f172a" }}>{msg.senderName} ({msg.departmentCode})</strong>
+                  <div
+                    key={msg.id}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      backgroundColor: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "11.5px",
+                        color: "#64748b",
+                        marginBottom: "3px",
+                      }}
+                    >
+                      <strong style={{ color: "#0f172a" }}>
+                        {msg.senderName} ({msg.departmentCode})
+                      </strong>
                       <span>{msg.timestamp}</span>
                     </div>
-                    <p style={{ fontSize: "13px", color: showCipherRaw ? "#b45309" : "#0f172a", wordBreak: "break-word", fontFamily: showCipherRaw ? "monospace" : "inherit" }}>
-                      {showCipherRaw ? `AES-GCM::${msg.cipherBase64}` : decryptedMap[msg.id] || "Decrypting..."}
+                    <p
+                      style={{
+                        fontSize: "13px",
+                        color: showCipherRaw ? "#b45309" : "#0f172a",
+                        wordBreak: "break-word",
+                        fontFamily: showCipherRaw ? "monospace" : "inherit",
+                      }}
+                    >
+                      {showCipherRaw
+                        ? `AES-GCM::${msg.cipherBase64}`
+                        : decryptedMap[msg.id] || "Decrypting..."}
                     </p>
                   </div>
                 ))
@@ -840,12 +1122,13 @@ export default function SeniorExecutiveDashboardPage() {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
               />
-              <button type="submit" className="btn-primary">Send Message</button>
+              <button type="submit" className="btn-primary">
+                Send Message
+              </button>
             </form>
           </section>
         )}
 
-        {/* TAB 3: PROFILE (Edit Name, Username, Phone, Password, Profile Picture, Bio) */}
         {activeTab === "profile" && (
           <section className="pro-card" style={{ padding: "24px", maxWidth: "680px" }}>
             <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
@@ -855,56 +1138,187 @@ export default function SeniorExecutiveDashboardPage() {
               Update your name, username, phone number, password, profile picture, and bio.
             </p>
 
-            <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <form
+              onSubmit={handleSaveProfile}
+              style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                 {editAvatarUrl ? (
-                  <img src={editAvatarUrl} alt="Profile preview" style={{ width: "64px", height: "64px", borderRadius: "999px", objectFit: "cover", border: "2px solid #0f172a" }} />
+                  <img
+                    src={editAvatarUrl}
+                    alt="Profile preview"
+                    style={{
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "999px",
+                      objectFit: "cover",
+                      border: "2px solid #0f172a",
+                    }}
+                  />
                 ) : (
-                  <div style={{ width: "64px", height: "64px", borderRadius: "999px", backgroundColor: "#0f172a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "20px" }}>
+                  <div
+                    style={{
+                      width: "64px",
+                      height: "64px",
+                      borderRadius: "999px",
+                      backgroundColor: "#0f172a",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: "20px",
+                    }}
+                  >
                     {(editName || currentUser.name).charAt(0)}
                   </div>
                 )}
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#334155", marginBottom: "4px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "12.5px",
+                      fontWeight: 600,
+                      color: "#334155",
+                      marginBottom: "4px",
+                    }}
+                  >
                     Profile Picture (Upload Image or Paste URL)
                   </label>
-                  <input type="file" accept="image/*" onChange={handleAvatarFileChange} style={{ fontSize: "12.5px", marginBottom: "6px" }} />
-                  <input type="text" className="pro-input" style={{ width: "100%" }} placeholder="https://example.com/photo.jpg" value={editAvatarUrl} onChange={(e) => setEditAvatarUrl(e.target.value)} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    style={{ fontSize: "12.5px", marginBottom: "6px" }}
+                  />
+                  <input
+                    type="text"
+                    className="pro-input"
+                    style={{ width: "100%" }}
+                    placeholder="https://example.com/photo.jpg"
+                    value={editAvatarUrl}
+                    onChange={(e) => setEditAvatarUrl(e.target.value)}
+                  />
                 </div>
               </div>
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                <label
+                  style={{
+                    flex: "1 1 260px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "5px",
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                >
                   <span>Full Name</span>
-                  <input type="text" className="pro-input" value={editName} onChange={(e) => setEditName(e.target.value)} required />
+                  <input
+                    type="text"
+                    className="pro-input"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    required
+                  />
                 </label>
 
-                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                <label
+                  style={{
+                    flex: "1 1 260px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "5px",
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                >
                   <span>Username</span>
-                  <input type="text" className="pro-input" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} required />
+                  <input
+                    type="text"
+                    className="pro-input"
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    required
+                  />
                 </label>
               </div>
 
               <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
-                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                <label
+                  style={{
+                    flex: "1 1 260px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "5px",
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                >
                   <span>Phone Number</span>
-                  <input type="text" className="pro-input" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} required />
+                  <input
+                    type="text"
+                    className="pro-input"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    required
+                  />
                 </label>
 
-                <label style={{ flex: "1 1 260px", display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+                <label
+                  style={{
+                    flex: "1 1 260px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "5px",
+                    fontSize: "12.5px",
+                    fontWeight: 600,
+                    color: "#334155",
+                  }}
+                >
                   <span>Password</span>
-                  <input type="text" className="pro-input" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} required />
+                  <input
+                    type="text"
+                    className="pro-input"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    required
+                  />
                 </label>
               </div>
 
-              <label style={{ display: "flex", flexDirection: "column", gap: "5px", fontSize: "12.5px", fontWeight: 600, color: "#334155" }}>
+              <label
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px",
+                  fontSize: "12.5px",
+                  fontWeight: 600,
+                  color: "#334155",
+                }}
+              >
                 <span>Bio</span>
-                <textarea className="pro-textarea" rows={3} value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Write your role summary or bio..." />
+                <textarea
+                  className="pro-textarea"
+                  rows={3}
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="Write your role summary or bio..."
+                />
               </label>
 
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button type="submit" className="btn-primary">Save Profile Changes</button>
-                {profileSavedMsg && <span style={{ fontSize: "13px", color: "#047857", fontWeight: 600 }}>✓ {profileSavedMsg}</span>}
+                <button type="submit" className="btn-primary">
+                  Save Profile Changes
+                </button>
+                {profileSavedMsg && (
+                  <span style={{ fontSize: "13px", color: "#047857", fontWeight: 600 }}>
+                    [OK] {profileSavedMsg}
+                  </span>
+                )}
               </div>
             </form>
           </section>
