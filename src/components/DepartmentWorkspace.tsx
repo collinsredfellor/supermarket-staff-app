@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent, ChangeEvent } from "react";
+import { useEffect, useState, FormEvent, ChangeEvent, KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -34,14 +34,14 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const [handoffDoc, setHandoffDoc] = useState("");
   const [sessionRole, setSessionRole] = useState<string>("SENIOR_EXEC_ADMIN");
 
-  // Strategy Co-Admin Appointment inside Department
   const [coAdminName, setCoAdminName] = useState("");
   const [coAdminRole, setCoAdminRole] = useState("");
   const [coAdminNotice, setCoAdminNotice] = useState("");
 
-  // Encrypted Chat States
+  // Chat Mode States
   const [passphrase, setPassphrase] = useState("SM-ORG-001-SECURE");
   const [chatInput, setChatInput] = useState("");
+  const [enterToSend, setEnterToSend] = useState(true);
   const [encryptedMessages, setEncryptedMessages] = useState<EncryptedChatMessage[]>([]);
   const [decryptedMap, setDecryptedMap] = useState<Record<string, string>>({});
   const [showCipherRaw, setShowCipherRaw] = useState(false);
@@ -54,6 +54,16 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const [editAvatarUrl, setEditAvatarUrl] = useState("");
   const [editBio, setEditBio] = useState("");
   const [profileSavedMsg, setProfileSavedMsg] = useState("");
+
+  function syncProfileForm(worker: StaffMember) {
+    setEditName(worker.name || "");
+    setEditUsername(worker.username || "");
+    setEditPhone(worker.phone || "");
+    setEditPassword(worker.password || "");
+    setEditAvatarUrl(worker.avatarUrl || "");
+    setEditBio(worker.bio || "");
+    setProfileSavedMsg("");
+  }
 
   useEffect(() => {
     const hasAuth = document.cookie
@@ -73,7 +83,9 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
           parsedStaff = parsed;
           setStaffList(parsedStaff);
         }
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
 
     const rawSession = localStorage.getItem("sm_erp_session");
@@ -90,7 +102,9 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
         if (session.staffId) {
           currentSessionStaffId = session.staffId;
         }
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
 
     if (department) {
@@ -107,6 +121,8 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
       }
       if (preferredId) {
         setSelectedStaffId(preferredId);
+        const found = parsedStaff.find((s) => s.id === preferredId);
+        if (found) syncProfileForm(found);
       }
     }
 
@@ -114,14 +130,18 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     if (savedTimeline) {
       try {
         setTimeline(JSON.parse(savedTimeline));
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
 
     const savedChat = localStorage.getItem("sm_erp_encrypted_chat");
     if (savedChat) {
       try {
         setEncryptedMessages(JSON.parse(savedChat));
-      } catch {}
+      } catch {
+        // ignore
+      }
     }
   }, [department, router]);
 
@@ -145,7 +165,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
       <main style={{ minHeight: "100vh", padding: "40px", textAlign: "center" }}>
         <h1>Department Not Found</h1>
         <Link href="/dashboard" style={{ color: "#0f172a", fontWeight: 600 }}>
-          ← Return to Senior Executive Portal
+          <- Return to Senior Executive Portal
         </Link>
       </main>
     );
@@ -158,16 +178,6 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
   const selectableWorkers = rankedDeptWorkers.length > 0 ? rankedDeptWorkers : staffList;
   const activeWorker =
     selectableWorkers.find((w) => w.id === selectedStaffId) || selectableWorkers[0];
-
-  function syncProfileForm(worker: StaffMember) {
-    setEditName(worker.name);
-    setEditUsername(worker.username);
-    setEditPhone(worker.phone);
-    setEditPassword(worker.password);
-    setEditAvatarUrl(worker.avatarUrl || "");
-    setEditBio(worker.bio || "");
-    setProfileSavedMsg("");
-  }
 
   function handleSelectWorker(newId: string) {
     setSelectedStaffId(newId);
@@ -278,8 +288,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     persistStaff(updatedStaff);
   }
 
-  async function handleSendEncryptedChat(e: FormEvent) {
-    e.preventDefault();
+  async function submitDeptChat() {
     if (!chatInput.trim() || !department || !activeWorker) return;
 
     const { ivBase64, cipherBase64 } = await encryptMessage(chatInput.trim(), passphrase);
@@ -298,6 +307,18 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
     setEncryptedMessages(updated);
     localStorage.setItem("sm_erp_encrypted_chat", JSON.stringify(updated));
     setChatInput("");
+  }
+
+  async function handleSendEncryptedChat(e: FormEvent) {
+    e.preventDefault();
+    await submitDeptChat();
+  }
+
+  function handleDeptChatKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (enterToSend && e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void submitDeptChat();
+    }
   }
 
   function handleAvatarFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -339,14 +360,13 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
 
   return (
     <>
-      {/* Instagram-Style Navigation Dock: Bottom on mobile, slanting downwards on left on desktop */}
       <nav className="insta-dock" aria-label="Department Navigation">
         <button
           type="button"
           className={`insta-dock-btn ${activeTab === "home" ? "active" : ""}`}
           onClick={() => setActiveTab("home")}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
             <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" />
           </svg>
           <span>Home</span>
@@ -357,7 +377,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
           className={`insta-dock-btn ${activeTab === "messages" ? "active" : ""}`}
           onClick={() => setActiveTab("messages")}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           <span>Messages</span>
@@ -371,7 +391,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
             setActiveTab("profile");
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
@@ -379,8 +399,17 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
         </button>
       </nav>
 
-      <main className="dock-main-content" style={{ minHeight: "100vh", maxWidth: "1280px", marginRight: "auto", paddingLeft: "20px", paddingRight: "20px", paddingTop: "24px" }}>
-        {/* Top Department Header Showing User Name & Current Doings */}
+      <main
+        className="dock-main-content"
+        style={{
+          minHeight: "100vh",
+          maxWidth: "1280px",
+          marginRight: "auto",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          paddingTop: "24px",
+        }}
+      >
         <header
           className="pro-card"
           style={{
@@ -398,10 +427,30 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               <img
                 src={activeWorker.avatarUrl}
                 alt={activeWorker.name}
-                style={{ width: "52px", height: "52px", borderRadius: "999px", objectFit: "cover", border: "2px solid #0f172a" }}
+                style={{
+                  width: "54px",
+                  height: "54px",
+                  borderRadius: "999px",
+                  objectFit: "cover",
+                  border: "2px solid #0f172a",
+                }}
               />
             ) : (
-              <div style={{ width: "52px", height: "52px", borderRadius: "999px", backgroundColor: "#0f172a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "18px", flexShrink: 0 }}>
+              <div
+                style={{
+                  width: "54px",
+                  height: "54px",
+                  borderRadius: "999px",
+                  background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "19px",
+                  flexShrink: 0,
+                }}
+              >
                 {activeWorker.name.charAt(0)}
               </div>
             )}
@@ -410,14 +459,14 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
                 {sessionRole === "SENIOR_EXEC_ADMIN" && (
                   <Link href="/dashboard" className="btn-secondary" style={{ textDecoration: "none", padding: "5px 11px", fontSize: "12px" }}>
-                    ← Senior Executive Portal
+                    <- Senior Executive Portal
                   </Link>
                 )}
                 <button type="button" onClick={handleSignOut} className="btn-secondary" style={{ padding: "5px 11px", fontSize: "12px" }}>
                   Sign Out
                 </button>
                 <span style={{ fontSize: "11.5px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#f1f5f9", color: department.accent }}>
-                  {department.code} • {department.badge}
+                  {department.code} | {department.badge}
                 </span>
                 {deptExecutiveAdmin && (
                   <span style={{ fontSize: "11.5px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", backgroundColor: "#0f172a", color: "#ffffff" }}>
@@ -427,10 +476,10 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               </div>
 
               <h1 style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a" }}>
-                {activeWorker.name} — {department.name}
+                {activeWorker.name} - {department.name}
               </h1>
               <p style={{ color: "#475569", fontSize: "13px", marginTop: "3px" }}>
-                <strong>His/Her Doings:</strong> {activeWorker.trackedApps[0]?.activeTask || department.purpose}
+                <strong>His Doings:</strong> {activeWorker.trackedApps[0]?.activeTask || department.purpose}
               </p>
             </div>
           </div>
@@ -439,22 +488,25 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#475569", marginBottom: "5px" }}>
               Active Member in {department.code}:
             </label>
-            <select className="pro-select" style={{ width: "100%", fontWeight: 600 }} value={activeWorker.id} onChange={(e) => handleSelectWorker(e.target.value)}>
+            <select
+              className="pro-select"
+              style={{ width: "100%", fontWeight: 600 }}
+              value={activeWorker.id}
+              onChange={(e) => handleSelectWorker(e.target.value)}
+            >
               {selectableWorkers.map((w, idx) => (
                 <option key={w.id} value={w.id}>
-                  {idx === 0 ? "★ [Exec Admin] " : w.isStrategyCoAdmin ? "[Co-Admin] " : ""}
-                  {w.name} — {w.title}
+                  {idx === 0 ? "* [Exec Admin] " : w.isStrategyCoAdmin ? "[Co-Admin] " : ""}
+                  {w.name} - {w.title}
                 </option>
               ))}
             </select>
           </div>
         </header>
 
-        {/* TAB 1: HOME (Working Part Dashboard, Doings, Co-Admin Appointment & Timeline) */}
         {activeTab === "home" && (
           <>
             <section style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "22px" }}>
-              {/* Credentials & Strategy Co-Admin */}
               <div className="pro-card" style={{ flex: "1 1 380px", padding: "22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                   <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
@@ -467,7 +519,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
 
                 <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>{activeWorker.name}</h2>
                 <p style={{ fontSize: "13px", color: department.accent, fontWeight: 600, marginBottom: "8px" }}>
-                  {activeWorker.title} • Rank {activeWorker.rankScore}
+                  {activeWorker.title} | Rank {activeWorker.rankScore}
                 </p>
                 {activeWorker.bio && (
                   <p style={{ fontSize: "12.5px", color: "#475569", marginBottom: "12px" }}>{activeWorker.bio}</p>
@@ -503,7 +555,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
                         <input type="text" className="pro-input" style={{ flex: 1 }} placeholder="Strategy Focus" value={coAdminRole} onChange={(e) => setCoAdminRole(e.target.value)} required />
                         <button type="submit" className="btn-primary" style={{ padding: "9px 12px", fontSize: "12.5px" }}>Appoint</button>
                       </div>
-                      {coAdminNotice && <p style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>✓ {coAdminNotice}</p>}
+                      {coAdminNotice && <p style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>[OK] {coAdminNotice}</p>}
                     </form>
                   ) : (
                     <p style={{ fontSize: "12px", color: "#64748b" }}>
@@ -513,30 +565,35 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
                 </div>
               </div>
 
-              {/* Working Part: Active Doings & Trackable Software Applications */}
               <div className="pro-card" style={{ flex: "1.4 1 460px", padding: "22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
                   <div>
                     <span style={{ fontSize: "11.5px", fontWeight: 700, color: "#475569", textTransform: "uppercase" }}>
-                      Working Part • Active Doings & Software Telemetry
+                      Working Part | Active Doings & Software Telemetry
                     </span>
                     <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#0f172a", marginTop: "2px" }}>
                       {activeWorker.name}'s Current Doings
                     </h2>
                   </div>
-                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#047857" }}>● LIVE</span>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#047857" }}>* LIVE</span>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
                   {activeWorker.trackedApps.map((app, index) => (
-                    <div key={app.appName} style={{ padding: "14px 16px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                    <div key={app.appName} style={{ padding: "14px 16px", borderRadius: "12px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                         <strong style={{ fontSize: "14px", color: "#0f172a" }}>{app.appName}</strong>
-                        <span style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>{app.status} • {app.lastPing}</span>
+                        <span style={{ fontSize: "12px", color: "#047857", fontWeight: 600 }}>{app.status} | {app.lastPing}</span>
                       </div>
                       <p style={{ fontSize: "13px", color: "#475569", marginBottom: "10px" }}>{app.activeTask}</p>
-                      <div style={{ width: "100%", height: "8px", borderRadius: "999px", backgroundColor: "#e2e8f0", overflow: "hidden", marginBottom: "10px" }}>
-                        <div style={{ width: `${app.progress}%`, height: "100%", backgroundColor: department.accent, transition: "width 0.25s ease" }} />
+                      <div className="modern-bar-track" style={{ marginBottom: "10px" }}>
+                        <div
+                          className="modern-bar-fill"
+                          style={{
+                            width: `${app.progress}%`,
+                            background: `linear-gradient(90deg, ${department.accent} 0%, #334155 100%)`,
+                          }}
+                        />
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>Progress: {app.progress}%</span>
@@ -563,7 +620,6 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               </div>
             </section>
 
-            {/* Interdepartmental Timeline Handoffs */}
             <section className="pro-card" style={{ padding: "22px" }}>
               <h2 style={{ fontSize: "17px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
                 Interdepartmental Coordination Timeline
@@ -585,7 +641,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
                   <div key={t.id} style={{ padding: "10px 12px", borderRadius: "8px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", fontSize: "12.5px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
                       <strong style={{ color: "#0f172a" }}>[{t.departmentCode}] {t.actorRole}</strong>
-                      <span style={{ color: "#64748b", fontSize: "11.5px" }}>{t.documentRef} • {t.timestamp}</span>
+                      <span style={{ color: "#64748b", fontSize: "11.5px" }}>{t.documentRef} | {t.timestamp}</span>
                     </div>
                     <p style={{ color: "#334155" }}>{t.action}</p>
                   </div>
@@ -595,19 +651,23 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
           </>
         )}
 
-        {/* TAB 2: MESSAGES (Staff Encrypted Communication) */}
         {activeTab === "messages" && (
           <section className="pro-card" style={{ padding: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
               <div>
                 <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a" }}>
-                  Staff Encrypted Channel ({department.code})
+                  Staff Chat Mode ({department.code})
                 </h2>
                 <p style={{ fontSize: "13px", color: "#64748b" }}>Communicate securely with staff across departments</p>
               </div>
-              <button type="button" onClick={() => setShowCipherRaw(!showCipherRaw)} className="btn-secondary">
-                {showCipherRaw ? "Show Decrypted" : "Inspect Ciphertext"}
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button type="button" onClick={() => setEnterToSend(!enterToSend)} className="btn-secondary">
+                  Chat Mode: {enterToSend ? "Enter to Send (ON)" : "Button Only"}
+                </button>
+                <button type="button" onClick={() => setShowCipherRaw(!showCipherRaw)} className="btn-secondary">
+                  {showCipherRaw ? "Show Decrypted" : "Inspect Ciphertext"}
+                </button>
+              </div>
             </div>
 
             <div style={{ marginBottom: "12px" }}>
@@ -617,23 +677,37 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
               <input type="password" className="pro-input" style={{ width: "100%", maxWidth: "360px" }} value={passphrase} onChange={(e) => setPassphrase(e.target.value)} />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", minHeight: "260px", maxHeight: "360px", overflowY: "auto", padding: "12px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: "12px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", minHeight: "260px", maxHeight: "360px", overflowY: "auto", padding: "14px", borderRadius: "12px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", marginBottom: "12px" }}>
               {deptChatMessages.length === 0 ? (
                 <p style={{ fontSize: "13px", color: "#64748b", textAlign: "center", marginTop: "90px" }}>
                   No encrypted messages in {department.code} yet.
                 </p>
               ) : (
-                deptChatMessages.map((msg) => (
-                  <div key={msg.id} style={{ padding: "10px 12px", borderRadius: "8px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11.5px", color: "#64748b", marginBottom: "3px" }}>
-                      <strong style={{ color: "#0f172a" }}>{msg.senderName}</strong>
-                      <span>{msg.timestamp}</span>
+                deptChatMessages.map((msg) => {
+                  const isMine = msg.senderName === activeWorker.name;
+                  return (
+                    <div
+                      key={msg.id}
+                      style={{
+                        alignSelf: isMine ? "flex-end" : "flex-start",
+                        maxWidth: "82%",
+                        padding: "10px 14px",
+                        borderRadius: "12px",
+                        backgroundColor: isMine ? "#0f172a" : "#ffffff",
+                        color: isMine ? "#ffffff" : "#0f172a",
+                        border: isMine ? "1px solid #0f172a" : "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "11px", opacity: 0.8, marginBottom: "3px" }}>
+                        <strong>{msg.senderName}</strong>
+                        <span>{msg.timestamp}</span>
+                      </div>
+                      <p style={{ fontSize: "13.5px", wordBreak: "break-word", fontFamily: showCipherRaw ? "monospace" : "inherit" }}>
+                        {showCipherRaw ? `AES-GCM::${msg.cipherBase64}` : decryptedMap[msg.id] || "Decrypting..."}
+                      </p>
                     </div>
-                    <p style={{ fontSize: "13px", color: showCipherRaw ? "#b45309" : "#0f172a", wordBreak: "break-word", fontFamily: showCipherRaw ? "monospace" : "inherit" }}>
-                      {showCipherRaw ? `AES-GCM::${msg.cipherBase64}` : decryptedMap[msg.id] || "Decrypting..."}
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -642,20 +716,20 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
                 type="text"
                 className="pro-input"
                 style={{ flex: 1 }}
-                placeholder={`Encrypted message as ${activeWorker.name}...`}
+                placeholder={`Chat as ${activeWorker.name}...`}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={handleDeptChatKeyDown}
               />
-              <button type="submit" className="btn-primary">Send Message</button>
+              <button type="submit" className="btn-primary">Send</button>
             </form>
           </section>
         )}
 
-        {/* TAB 3: PROFILE (Edit Name, Username, Phone, Password, Profile Picture, Bio) */}
         {activeTab === "profile" && (
           <section className="pro-card" style={{ padding: "24px", maxWidth: "680px" }}>
             <h2 style={{ fontSize: "19px", fontWeight: 700, color: "#0f172a", marginBottom: "4px" }}>
-              Edit Profile — {activeWorker.name}
+              Edit Profile - {activeWorker.name}
             </h2>
             <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "18px" }}>
               Change your name, username, phone number, password, profile picture, and bio.
@@ -664,15 +738,15 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
             <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                 {editAvatarUrl ? (
-                  <img src={editAvatarUrl} alt="Avatar preview" style={{ width: "64px", height: "64px", borderRadius: "999px", objectFit: "cover", border: "2px solid #0f172a" }} />
+                  <img src={editAvatarUrl} alt="Avatar preview" style={{ width: "66px", height: "66px", borderRadius: "999px", objectFit: "cover", border: "2px solid #0f172a" }} />
                 ) : (
-                  <div style={{ width: "64px", height: "64px", borderRadius: "999px", backgroundColor: "#0f172a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "20px" }}>
+                  <div style={{ width: "66px", height: "66px", borderRadius: "999px", background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "21px" }}>
                     {(editName || activeWorker.name).charAt(0)}
                   </div>
                 )}
                 <div style={{ flex: 1 }}>
                   <label style={{ display: "block", fontSize: "12.5px", fontWeight: 600, color: "#334155", marginBottom: "4px" }}>
-                    Profile Picture (Upload Image or Paste URL)
+                    Profile Picture (Upload File or Paste Image URL)
                   </label>
                   <input type="file" accept="image/*" onChange={handleAvatarFileChange} style={{ fontSize: "12.5px", marginBottom: "6px" }} />
                   <input type="text" className="pro-input" style={{ width: "100%" }} placeholder="https://example.com/photo.jpg" value={editAvatarUrl} onChange={(e) => setEditAvatarUrl(e.target.value)} />
@@ -710,7 +784,7 @@ export default function DepartmentWorkspace({ slug }: DepartmentWorkspaceProps) 
 
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <button type="submit" className="btn-primary">Save Profile</button>
-                {profileSavedMsg && <span style={{ fontSize: "13px", color: "#047857", fontWeight: 600 }}>✓ {profileSavedMsg}</span>}
+                {profileSavedMsg && <span style={{ fontSize: "13px", color: "#047857", fontWeight: 600 }}>[OK] {profileSavedMsg}</span>}
               </div>
             </form>
           </section>
