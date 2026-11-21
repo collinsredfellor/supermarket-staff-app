@@ -7,9 +7,14 @@ export type HierarchyLevel =
 export interface StaffMember {
   id: string;
   name: string;
+  username: string;
+  phone: string;
+  password: string;
+  avatarUrl: string;
+  bio: string;
   title: string;
   level: HierarchyLevel;
-  rankScore: number; // Higher rankScore = higher rank inside the department
+  rankScore: number;
   departmentCode: string;
   clearance: string;
   shift: string;
@@ -521,6 +526,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1001",
     name: "Collins Musa",
+    username: "collins.musa",
+    phone: "+254 782 246 442",
+    password: "eucabeth1musa",
+    avatarUrl: "",
+    bio: "Senior Executive Admin leading supermarket governance, cross-department coordination, and strategy.",
     title: "Senior Executive Admin & CEO",
     level: "Level 2: Executive",
     rankScore: 100,
@@ -533,7 +543,7 @@ export const INITIAL_STAFF: StaffMember[] = [
     trackedApps: [
       {
         appName: "Executive BI & Branch Telemetry",
-        activeTask: "Reviewing Nakuru Main Branch Daily Margin",
+        activeTask: "Reviewing Main Branch Daily Margin & KPIs",
         progress: 92,
         status: "Running",
         lastPing: "Just now",
@@ -550,6 +560,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1002",
     name: "Grace Wanjiku",
+    username: "grace.wanjiku",
+    phone: "+254 712 340 112",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Managing daily POS reconciliation, supplier invoices, and branch financial controls.",
     title: "Finance Manager & Executive Admin (FIN-02)",
     level: "Level 3: Management",
     rankScore: 85,
@@ -562,7 +577,7 @@ export const INITIAL_STAFF: StaffMember[] = [
     trackedApps: [
       {
         appName: "POS & Mobile Money Reconciler",
-        activeTask: "Matching Till #01–#08 M-Pesa & Card Totals",
+        activeTask: "Matching Till #01–#08 Mobile Money & Card Totals",
         progress: 78,
         status: "Running",
         lastPing: "Just now",
@@ -579,6 +594,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1003",
     name: "David Kiprop",
+    username: "david.kiprop",
+    phone: "+254 723 551 908",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Handling vendor sourcing, purchase orders, and restock cost negotiations.",
     title: "Senior Procurement Officer & Executive Admin (PROC-03)",
     level: "Level 3: Management",
     rankScore: 84,
@@ -607,6 +627,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1004",
     name: "Peter Otieno",
+    username: "peter.otieno",
+    phone: "+254 701 882 334",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Inspecting incoming goods at receiving bays, verifying expiry dates, and logging GRNs.",
     title: "Warehouse & Stock Control Executive Admin (INV-04)",
     level: "Level 3: Management",
     rankScore: 86,
@@ -635,6 +660,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1005",
     name: "Faith Njeri",
+    username: "faith.njeri",
+    phone: "+254 718 902 441",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Supervising checkout lanes, customer care escalations, and loyalty rewards.",
     title: "Front-End & Sales Executive Admin (SLS-05)",
     level: "Level 3: Management",
     rankScore: 85,
@@ -663,6 +693,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1006",
     name: "Mercy Chebet",
+    username: "mercy.chebet",
+    phone: "+254 725 614 778",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Coordinating staff rosters, attendance tracking, recruitment, and employee welfare.",
     title: "HR Manager & Executive Admin (HR-06)",
     level: "Level 3: Management",
     rankScore: 88,
@@ -691,6 +726,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1007",
     name: "Brian Mwangi",
+    username: "brian.mwangi",
+    phone: "+254 734 119 820",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Maintaining POS hardware, network stability, backups, and system security.",
     title: "IT Infrastructure & Executive Admin (IT-07)",
     level: "Level 3: Management",
     rankScore: 84,
@@ -719,6 +759,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1008",
     name: "Samuel Kamau",
+    username: "samuel.kamau",
+    phone: "+254 711 405 612",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Managing delivery dispatch, fleet schedules, and inter-branch stock transfers.",
     title: "Logistics & Fleet Executive Admin (LOG-08)",
     level: "Level 3: Management",
     rankScore: 85,
@@ -747,6 +792,11 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: "EMP-1009",
     name: "Amina Hassan",
+    username: "amina.hassan",
+    phone: "+254 720 778 219",
+    password: "staff123",
+    avatarUrl: "",
+    bio: "Leading brand promotions, visual merchandising displays, and campaign analytics.",
     title: "Brand & Merchandising Executive Admin (BRD-09)",
     level: "Level 3: Management",
     rankScore: 86,
